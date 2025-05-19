@@ -40,6 +40,7 @@ const PostGenerator = () => {
     language: "English",
     tone: "Professional",
     postLength: "Medium",
+    whatToInclude: "", // Added new field
   });
   const [userData, setUserData] = useState({
     designation: "",
@@ -149,6 +150,26 @@ const PostGenerator = () => {
     };
   }, []);
 
+  // Add reset function
+  const handleReset = () => {
+    // Reset form data to defaults
+    setFormData({
+      topic: "",
+      language: "English",
+      tone: "Professional",
+      postLength: "Medium",
+      whatToInclude: "",
+    });
+    
+    // Clear search term and generated post
+    setSearchTerm("");
+    setGeneratedPost("");
+    
+    // Reset dropdown state
+    setShowTopicDropdown(false);
+    setIsTopicInUserPreferences(true);
+  };
+
   const handleGeneratePost = async () => {
     if (!user?.user_id || !formData.topic.trim()) {
       toast({
@@ -208,6 +229,7 @@ const PostGenerator = () => {
         tone: formData.tone,
         experience: userData.expLevel,
         designation: userData.designation,
+        what_to_include: formData.whatToInclude.trim() || "Anything", // Pass the whatToInclude value
       });
 
       const fullPost = `${postContent.content}\n\n${postContent.hashtags}`;
@@ -238,8 +260,8 @@ const PostGenerator = () => {
     } finally {
       setIsGenerating(false);
     }
-
   };
+
   const handleModalSuccess = async () => {
     setShowModal(false);
     setIsLoading(true);
@@ -290,9 +312,8 @@ const PostGenerator = () => {
                   placeholder="Search or select a topic"
                   value={searchTerm}
                   onChange={(e) => {
-                    const newValue = e.target.value;
-                    setSearchTerm(newValue);
-                    setFormData({...formData, topic: newValue});
+                    setSearchTerm(e.target.value);
+                    setFormData({...formData, topic: e.target.value});
                     setShowTopicDropdown(true);
                   }}
                   onClick={() => setShowTopicDropdown(true)}
@@ -322,12 +343,22 @@ const PostGenerator = () => {
                         {topic.topic_name}
                       </div>
                     ))
+                  ) : searchTerm.trim() !== "" ? (
+                    <div className="px-4 py-2 text-gray-500">
+                      No matching topics found. You can still generate a post with this topic.
+                    </div>
                   ) : (
-                    <div className="px-4 py-2 text-gray-500">No topics found</div>
+                    <div className="px-4 py-2 text-gray-500">Start typing to search topics</div>
                   )}
                 </div>
               )}
             </div>
+            
+            {!isTopicInUserPreferences && searchTerm.trim() !== "" && (
+              <div className="text-sm text-blue-600">
+                This topic will be added to your preferences when you generate a post.
+              </div>
+            )}
 
             <div>
               <h3 className="font-medium mb-2 text-sm sm:text-base">Language</h3>
@@ -386,20 +417,43 @@ const PostGenerator = () => {
               </Select>
             </div>
 
-            <Button
-              className="w-full mt-4 sm:mt-6"
-              onClick={handleGeneratePost}
-              disabled={!formData.topic || isGenerating}
-            >
-              {isGenerating ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Generating...
-                </>
-              ) : (
-                "Generate Post"
-              )}
-            </Button>
+            {/* What to Include section */}
+            <div>
+              <h3 className="font-medium mb-2 text-sm sm:text-base">What to Include (Optional)</h3>
+              <Textarea
+                placeholder="Specify anything you'd like to include in your post (e.g., statistics, personal story, call to action)"
+                value={formData.whatToInclude}
+                onChange={(e) => setFormData({...formData, whatToInclude: e.target.value})}
+                className="min-h-[80px] resize-none"
+              />
+            </div>
+
+            {/* Buttons section with Generate and Reset */}
+            <div className="flex gap-2 mt-4 sm:mt-6">
+              <Button
+                className="flex-1"
+                onClick={handleGeneratePost}
+                disabled={!formData.topic.trim() || isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
+                    Generating...
+                  </>
+                ) : (
+                  "Generate Post"
+                )}
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                className="w-auto"
+                disabled={isGenerating}
+              >
+                Reset
+              </Button>
+            </div>
           </div>
 
           {/* Preview Column */}

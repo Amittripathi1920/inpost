@@ -1,38 +1,49 @@
-// Color options for dashboard theme
+// Define color options for the dashboard
 export const COLOR_OPTIONS = [
-  { name: "Default", color: "#8884d8" },
-  { name: "Red", color: "#ef4444" },
-  { name: "Rose", color: "#f43f5e" },
-  { name: "Orange", color: "#f97316" },
-  { name: "Green", color: "#22c55e" },
-  { name: "Blue", color: "#3b82f6" },
-  { name: "Yellow", color: "#eab308" },
-  { name: "Violet", color: "#8b5cf6" },
+  "#8884d8", // Default (Purple)
+  "#ef4444", // Red
+  "#f43f5e", // Rose
+  "#f97316", // Orange
+  "#22c55e", // Green
+  "#3b82f6", // Blue
+  "#eab308", // Yellow
+  "#8b5cf6"  // Violet
 ];
 
-// Convert RGB to HSL for color manipulation
-export function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+
+// Convert RGB to HSL (for generating color variations)
+export const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => {
   r /= 255;
   g /= 255;
   b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s, l = (max + min) / 2;
 
-  if (max === min) {
-    h = s = 0; // achromatic
-  } else {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
     switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-      case g: h = ((b - r) / d + 2); break;
-      case b: h = ((r - g) / d + 4); break;
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
     }
-    h *= 60;
+
+    h /= 6;
   }
 
-  return [h, s * 100, l * 100];
-}
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+};
 
 // Extract hashtags from post content
 export function extractHashtags(text: string): string[] {

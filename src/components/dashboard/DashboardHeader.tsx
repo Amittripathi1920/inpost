@@ -1,24 +1,23 @@
 import { Button } from "@/components/ui/button";
+import { Filter, Menu } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  LayoutDashboardIcon,
-  FileTextIcon,
-  TrendingUpIcon,
-  ListIcon,
-  FilterIcon,
-} from "lucide-react";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { FilterPanel } from "./FilterPanel";
 
 interface DashboardHeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
+  dateRange?: any;
+  setDateRange?: any;
+  filters?: any;
+  setFilters?: any;
+  resetFilters?: () => void;
+  filterOptions?: any;
 }
 
 export function DashboardHeader({
@@ -26,56 +25,67 @@ export function DashboardHeader({
   setActiveTab,
   showFilters,
   setShowFilters,
+  dateRange,
+  setDateRange,
+  filters,
+  setFilters,
+  resetFilters,
+  filterOptions = { topics: [], lengths: [], tones: [], languages: [] }
 }: DashboardHeaderProps) {
   return (
-    <div className="md:hidden space-y-4 mb-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-1"
-        >
-          <FilterIcon className="h-4 w-4" />
-          Filters
-        </Button>
-      </div>
+    <div className="md:hidden border-b p-4 flex justify-between items-center">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setShowFilters(true)}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
       
-      <div className="grid grid-cols-4 gap-2">
-        <Button
-          variant={activeTab === "overview" ? "default" : "outline"}
-          className="flex flex-col items-center justify-center h-16 p-1"
-          onClick={() => setActiveTab("overview")}
-        >
-          <LayoutDashboardIcon className="h-4 w-4 mb-1" />
-          <span className="text-xs">Overview</span>
-        </Button>
-        <Button
-          variant={activeTab === "content" ? "default" : "outline"}
-          className="flex flex-col items-center justify-center h-16 p-1"
-          onClick={() => setActiveTab("content")}
-        >
-          <FileTextIcon className="h-4 w-4 mb-1" />
-          <span className="text-xs">Content</span>
-        </Button>
-        <Button
-          variant={activeTab === "trends" ? "default" : "outline"}
-          className="flex flex-col items-center justify-center h-16 p-1"
-          onClick={() => setActiveTab("trends")}
-        >
-          <TrendingUpIcon className="h-4 w-4 mb-1" />
-          <span className="text-xs">Trends</span>
-        </Button>
-        <Button
-          variant={activeTab === "posts" ? "default" : "outline"}
-          className="flex flex-col items-center justify-center h-16 p-1"
-          onClick={() => setActiveTab("posts")}
-        >
-          <ListIcon className="h-4 w-4 mb-1" />
-          <span className="text-xs">Posts</span>
-        </Button>
-      </div>
+      <h1 className="text-lg font-semibold">
+        {activeTab === "overview" && "Dashboard"}
+        {activeTab === "content" && "Content Analysis"}
+        {activeTab === "trends" && "Trends"}
+        {activeTab === "posts" && "All Posts"}
+      </h1>
+      
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="icon">
+            <Filter className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-4" align="end">
+          <div className="space-y-4">
+            <h3 className="font-medium">Filter Posts</h3>
+            
+            {dateRange && setDateRange && filters && setFilters && resetFilters && (
+              <>
+                <FilterPanel
+                  dateRange={dateRange}
+                  setDateRange={setDateRange}
+                  filters={filters}
+                  setFilters={setFilters}
+                  resetFilters={resetFilters}
+                  topicOptions={filterOptions.topics}
+                  lengthOptions={filterOptions.lengths}
+                  toneOptions={filterOptions.tones}
+                  languageOptions={filterOptions.languages}
+                />
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={resetFilters}
+                >
+                  Reset Filters
+                </Button>
+              </>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

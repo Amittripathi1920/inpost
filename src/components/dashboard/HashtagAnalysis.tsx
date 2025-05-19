@@ -1,65 +1,75 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useChartAnimation } from "@/hooks/useChartAnimation";
+import React from "react";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell
+} from "recharts";
 import { cn } from "@/lib/utils";
 
 interface HashtagAnalysisProps {
-  hashtagData: { tag: string; count: number }[];
+  hashtagData: { tag: string; count: number; id?: string }[];
   themeColor: string;
   className?: string;
 }
 
-export function HashtagAnalysis({ hashtagData, themeColor, className }: HashtagAnalysisProps) {
-  const animation = useChartAnimation(hashtagData);
-  
+export function HashtagAnalysis({ 
+  hashtagData, 
+  themeColor,
+  className 
+}: HashtagAnalysisProps) {
+  // Generate different colors based on the theme color
+  const getColorArray = (baseColor: string, count: number) => {
+    // Convert hex to RGB
+    const r = parseInt(baseColor.slice(1, 3), 16);
+    const g = parseInt(baseColor.slice(3, 5), 16);
+    const b = parseInt(baseColor.slice(5, 7), 16);
+    
+    // Generate array of colors with different brightness
+    return Array.from({ length: count || 1 }, (_, i) => {
+      const factor = 0.7 + (i * 0.1); // Adjust brightness
+      const newR = Math.min(255, Math.floor(r * factor));
+      const newG = Math.min(255, Math.floor(g * factor));
+      const newB = Math.min(255, Math.floor(b * factor));
+      
+      return `rgb(${newR}, ${newG}, ${newB})`;
+    });
+  };
+
+  const colors = getColorArray(themeColor, hashtagData.length);
+
   return (
-    <Card className={cn("chart-container", className)}>
-      <CardHeader>
-        <CardTitle className="card-title">Top Hashtags</CardTitle>
-        <CardDescription className="card-description">Most frequently used hashtags in your posts</CardDescription>
-      </CardHeader>
-      <CardContent className="h-80">
-        {hashtagData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
-              data={hashtagData} 
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+    <div className={cn("h-[300px] w-full", className)}>
+      {hashtagData.length > 0 ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={hashtagData}>
+            <XAxis dataKey="tag" />
+            <YAxis />
+            <Tooltip formatter={(value) => [`${value} occurrences`, 'Count']} />
+            <Legend />
+            <Bar 
+              dataKey="count" 
+              name="Occurrences" 
+              radius={[4, 4, 0, 0]}
+              // Remove animation property or set it correctly
+              animationDuration={500}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-              <XAxis 
-                type="number"
-                tick={{ fontSize: 12 }}
-                tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
-                axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
-              />
-              <YAxis 
-                type="category" 
-                dataKey="tag" 
-                width={120}
-                tick={{ fontSize: 12 }}
-                tickLine={{ stroke: 'rgba(0,0,0,0.1)' }}
-                axisLine={{ stroke: 'rgba(0,0,0,0.1)' }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  borderRadius: '8px', 
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  border: 'none',
-                  padding: '8px 12px'
-                }}
-                formatter={(value) => [`${value} posts`, 'Count']}
-                labelFormatter={(label) => label}
-              />
-              <Bar dataKey="count" fill={themeColor} radius={[0, 4, 4, 0]} {...animation} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-muted-foreground">No hashtags found in your posts</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              {hashtagData.map((entry, index) => (
+                <Cell key={`cell-${entry.id || index}`} fill={colors[index % colors.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-muted-foreground">No hashtags found</p>
+        </div>
+      )}
+    </div>
   );
 }
