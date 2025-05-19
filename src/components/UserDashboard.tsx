@@ -18,6 +18,7 @@ import { ToneAnalysis } from "@/components/dashboard/ToneAnalysis";
 import { HashtagAnalysis } from "@/components/dashboard/HashtagAnalysis";
 import { RecentPosts } from "@/components/dashboard/RecentPosts";
 import { PostsTable } from "@/components/dashboard/PostsTable";
+import { getStorageItem, setStorageItem } from "@/utils/storage";
 
 interface TopicCount {
   name: string;
@@ -93,7 +94,7 @@ const UserDashboard = () => {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("dashboard-theme-color");
+    const saved = getStorageItem("dashboard-theme-color");
     if (saved) setThemeColor(saved);
   }, []);
 
@@ -109,13 +110,13 @@ const UserDashboard = () => {
         let userPosts: Post[];
         
         if (dateRange?.from && dateRange?.to) {
-  userPosts = await getFilteredPostsByDateRange({
-    from: dateRange.from,
-    to: dateRange.to
-  });
-} else {
-  userPosts = await getUserGeneratedPosts();
-}
+          userPosts = await getFilteredPostsByDateRange({
+            from: dateRange.from,
+            to: dateRange.to
+          });
+        } else {
+          userPosts = await getUserGeneratedPosts();
+        }
         
         if (!userPosts || userPosts.length === 0) {
           setPosts([]);
@@ -283,7 +284,7 @@ const UserDashboard = () => {
 
   const handleThemeSelect = (color: string) => {
     setThemeColor(color);
-    localStorage.setItem("dashboard-theme-color", color);
+    setStorageItem("dashboard-theme-color", color);
   };
 
   const toggleExpandPost = (postId: string) => {
@@ -294,20 +295,38 @@ const UserDashboard = () => {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard!",
-      duration: 2000,
-    });
+    try {
+      navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied to clipboard!",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+      toast({
+        title: "Copy failed",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExportToCsv = () => {
-    exportPostsToCsv(filteredPosts);
-    toast({
-      title: "Export Successful",
-      description: "Your posts have been exported to CSV",
-      duration: 3000,
-    });
+    try {
+      exportPostsToCsv(filteredPosts);
+      toast({
+        title: "Export Successful",
+        description: "Your posts have been exported to CSV",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Failed to export posts:", error);
+      toast({
+        title: "Export Failed",
+        description: "Could not export posts to CSV",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -316,12 +335,17 @@ const UserDashboard = () => {
         <Card className="col-span-full">
           <CardHeader>
             <CardTitle>Posts Summary</CardTitle>
-            <CardDescription>Overview of your LinkedIn post generation activity</CardDescription>
+            {/* Use a span instead of CardDescription which renders as p */}
+            <span className="text-sm text-muted-foreground">
+              Overview of your LinkedIn post generation activity
+            </span>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full" />
+                <div key={i} className="h-24 w-full">
+                  <Skeleton className="h-full w-full" />
+                </div>
               ))}
             </div>
           </CardContent>
@@ -330,14 +354,21 @@ const UserDashboard = () => {
           <Card key={i}>
             <CardHeader>
               <CardTitle>
-                <Skeleton className="h-6 w-3/4" />
+                <div className="h-6 w-3/4">
+                  <Skeleton className="h-full w-full" />
+                </div>
               </CardTitle>
-              <CardDescription>
-                <Skeleton className="h-4 w-full mt-2" />
-              </CardDescription>
+              {/* Use a span instead of CardDescription */}
+              <span className="text-sm text-muted-foreground block mt-2">
+                <div className="h-4 w-full">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              </span>
             </CardHeader>
             <CardContent className="h-80">
-              <Skeleton className="h-full w-full" />
+              <div className="h-full w-full">
+                <Skeleton className="h-full w-full" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -472,7 +503,7 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent className="h-80">
                 <div className="h-full flex items-center justify-center">
-                  <p className="text-muted-foreground">Coming soon</p>
+                  <span className="text-muted-foreground">Coming soon</span>
                 </div>
               </CardContent>
             </Card>
@@ -484,7 +515,7 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent className="h-80">
                 <div className="h-full flex items-center justify-center">
-                  <p className="text-muted-foreground">Coming soon</p>
+                  <span className="text-muted-foreground">Coming soon</span>
                 </div>
               </CardContent>
             </Card>
@@ -496,7 +527,7 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent className="h-80">
                 <div className="h-full flex items-center justify-center">
-                  <p className="text-muted-foreground">Coming soon</p>
+                  <span className="text-muted-foreground">Coming soon</span>
                 </div>
               </CardContent>
             </Card>
@@ -512,7 +543,7 @@ const UserDashboard = () => {
         )}
       </div>
     </div> 
-    );
+  );
 };
 
 export default UserDashboard;

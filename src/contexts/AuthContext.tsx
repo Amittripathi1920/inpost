@@ -67,33 +67,58 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const initSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        setSession(session);
-        loadUserProfile(session.user.id, session.user.email || "");
+        if (session?.user) {
+          setSession(session);
+          loadUserProfile(session.user.id, session.user.email || "");
+        }
+      } catch (error) {
+        console.error("Error initializing session:", error);
+        // Handle gracefully - user will need to log in again
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          setSession(session);
-          loadUserProfile(session.user.id, session.user.email || "");
-        } else if (event === "SIGNED_OUT") {
-          setUser(null);
-          setIsAuthenticated(false);
-          setSession(null);
+    let subscription: { subscription: { unsubscribe: () => void } } = {
+      subscription: { unsubscribe: () => {} }
+    };
+
+    try {
+      const { data: subscriptionData } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          try {
+            if (event === "SIGNED_IN" && session) {
+              setSession(session);
+              loadUserProfile(session.user.id, session.user.email || "");
+            } else if (event === "SIGNED_OUT") {
+              setUser(null);
+              setIsAuthenticated(false);
+              setSession(null);
+            }
+          } catch (error) {
+            console.error("Error in auth state change handler:", error);
+          }
         }
+      );
+      
+      if (subscriptionData) {
+        subscription = subscriptionData;
       }
-    );
+    } catch (error) {
+      console.error("Error setting up auth subscription:", error);
+    }
 
     initSession();
 
     return () => {
-      subscription.subscription.unsubscribe();
+      try {
+        subscription.subscription.unsubscribe();
+      } catch (error) {
+        console.error("Error unsubscribing from auth changes:", error);
+      }
     };
   }, []);
 
@@ -117,6 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       toast({ title: "Login Successful", description: "Welcome back!" });
       return true;
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login Error",
         description: "An unexpected error occurred. Please try again.",
@@ -171,6 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return true;
     } catch (error) {
+      console.error("Signup error:", error);
       toast({
         title: "Signup Error",
         description: "An unexpected error occurred. Please try again.",
@@ -200,21 +227,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .eq("user_id", user.user_id);
 
       if (error) {
+        console.error("Profile update error:", error);
         return false;
       }
 
       setUser((prev) => (prev ? { ...prev, ...updateData } : prev));
       return true;
     } catch (error) {
+      console.error("Profile update exception:", error);
       return false;
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAuthenticated(false);
-    setSession(null);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+      setSession(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still clear the local state even if the API call fails
+      setUser(null);
+      setIsAuthenticated(false);
+      setSession(null);
+    }
   };
 
   return (

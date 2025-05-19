@@ -2,13 +2,10 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { base64ToFile } from "@/utils/base64ToFile";
-
 interface ProfileImageUploaderProps {
   onImageChange: (base64: string) => void; // This is called when base64 is ready
   existingImage: string | null; // Existing image base64 (if any)
 }
-
 const ProfileImageUploader = ({ onImageChange, existingImage }: ProfileImageUploaderProps) => {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(existingImage);
@@ -61,6 +58,9 @@ const ProfileImageUploader = ({ onImageChange, existingImage }: ProfileImageUplo
           className="block w-full p-2"
           onChange={handleImageChange}
           disabled={loading}
+          title="Upload profile image"
+          placeholder="Choose a profile image"
+          aria-label="Upload profile image"
         />
       </div>
 
@@ -80,5 +80,4 @@ const ProfileImageUploader = ({ onImageChange, existingImage }: ProfileImageUplo
     </div>
   );
 };
-
 export default ProfileImageUploader;

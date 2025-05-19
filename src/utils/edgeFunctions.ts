@@ -130,3 +130,34 @@ export async function updateUserFirstTimeStatus(userId: string, isFirstTime: boo
   if (error) throw new Error(error.message);
   return data;
 }
+
+// Add this function to your existing edgeFunctions.ts file
+
+export const checkAndAddTopicForUser = async ({
+  userId,
+  topicName,
+  designationId
+}: {
+  userId: string;
+  topicName: string;
+  designationId: number | null;
+}) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('check-and-add-topic', {
+      body: {
+        userId,
+        topicName,
+        designationId
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in checkAndAddTopicForUser:', error);
+    throw error;
+  }
+};

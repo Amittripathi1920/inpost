@@ -241,7 +241,7 @@ const OnboardingModal = ({ userId, onClose, onSuccess }: Props) => {
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome! Let’s personalize your experience</DialogTitle>
+          <DialogTitle>Welcome! Let's personalize your experience</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -256,6 +256,7 @@ const OnboardingModal = ({ userId, onClose, onSuccess }: Props) => {
               onFocus={() => setShowDropdown(true)}
               placeholder="Type or select your designation"
               disabled={loading}
+              title="Enter your designation"
             />
             {showDropdown && filteredDesignations.length > 0 && (
               <div className="absolute z-10 w-full bg-white border rounded shadow max-h-40 overflow-y-auto">
@@ -280,6 +281,8 @@ const OnboardingModal = ({ userId, onClose, onSuccess }: Props) => {
               value={selectedExp}
               onChange={(e) => setSelectedExp(e.target.value)}
               disabled={loading}
+              title="Select your experience level"
+              aria-label="Select your experience level"
             >
               <option value="">-- Select --</option>
               {experiences.map((e) => (
@@ -299,6 +302,8 @@ const OnboardingModal = ({ userId, onClose, onSuccess }: Props) => {
               className="w-full mt-1 rounded border p-2"
               onChange={handleImageChange}
               disabled={loading}
+              title="Choose a profile image"
+              placeholder="Select a profile image"
             />
             {imageError && <p className="text-red-600">{imageError}</p>}
             {imageBase64 && (
@@ -317,6 +322,4 @@ const OnboardingModal = ({ userId, onClose, onSuccess }: Props) => {
       </DialogContent>
     </Dialog>
   );
-};
-
-export default OnboardingModal;
+};export default OnboardingModal;

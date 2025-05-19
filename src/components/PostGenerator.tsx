@@ -13,13 +13,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/use-toast";
 import OnboardingModal from "@/components/OnboardingModal";
 import FeedbackModal from "@/pages/FeedbackPage";
-import { ThumbsUp } from "lucide-react";
+import { ThumbsUp, Search } from "lucide-react";
 import { 
   getOptions, 
   saveGeneratedPost, 
   getUserProfile,
-  getIdsForPostGeneration
+  getIdsForPostGeneration,
+  checkAndAddTopicForUser
 } from "@/utils/edgeFunctions";
+import { Input } from "@/components/ui/input";
 
 const PostGenerator = () => {
   const { user } = useAuth();
@@ -46,6 +48,28 @@ const PostGenerator = () => {
     fullName: "",
   });
   const [generatedPost, setGeneratedPost] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
+  const [isTopicInUserPreferences, setIsTopicInUserPreferences] = useState(true);
+
+  // Filter topics based on search term
+  const filteredTopics = options.topics.filter(topic => 
+    topic.topic_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Check if the current search term matches any topic in user preferences
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setIsTopicInUserPreferences(true);
+      return;
+    }
+    
+    const matchingTopic = options.topics.find(topic => 
+      topic.topic_name.toLowerCase().trim() === searchTerm.toLowerCase().trim()
+    );
+    
+    setIsTopicInUserPreferences(!!matchingTopic);
+  }, [searchTerm, options.topics]);
 
   const loadUserData = async () => {
     if (!user?.user_id) return;
@@ -110,8 +134,23 @@ const PostGenerator = () => {
     loadData();
   }, [user?.user_id]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.topic-combobox-container')) {
+        setShowTopicDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleGeneratePost = async () => {
-    if (!user?.user_id || !formData.topic) {
+    if (!user?.user_id || !formData.topic.trim()) {
       toast({
         title: "Error",
         description: "Please select a topic first",
@@ -122,6 +161,37 @@ const PostGenerator = () => {
 
     setIsGenerating(true);
     try {
+      let topicId;
+      
+      // If the topic is not in user preferences, check and add it
+      if (!isTopicInUserPreferences) {
+        const designationId = userData.designation ? parseInt(userData.designation) : null;
+        const result = await checkAndAddTopicForUser({
+          userId: user.user_id,
+          topicName: formData.topic.trim(),
+          designationId
+        });
+        
+        if (result.success) {
+          topicId = result.topicId;
+          
+          // Refresh the topics list
+          await loadOptionsData();
+          
+          if (result.isNewTopic) {
+            toast({
+              title: "New Topic Added",
+              description: `"${formData.topic}" has been added to your topics.`,
+            });
+          } else {
+            toast({
+              title: "Topic Added",
+              description: `"${formData.topic}" has been added to your topics.`,
+            });
+          }
+        }
+      }
+
       // Get IDs for the selected options using the Edge Function
       const ids = await getIdsForPostGeneration({
         topicName: formData.topic,
@@ -145,13 +215,13 @@ const PostGenerator = () => {
 
       // Use the Edge Function to save the post
       await saveGeneratedPost({
-        topic_id: ids.topic_id,
+        topic_id: topicId || ids.topic_id,
         influencer_id: 1, // Default influencer ID
         length_id: ids.length_id,
         language_id: ids.language_id,
         tone_id: ids.tone_id,
         exp_level_id: ids.exp_level_id,
-        generated_post: fullPost,
+        generated_post: fullPost
       });
 
       toast({
@@ -168,8 +238,8 @@ const PostGenerator = () => {
     } finally {
       setIsGenerating(false);
     }
-  };
 
+  };
   const handleModalSuccess = async () => {
     setShowModal(false);
     setIsLoading(true);
@@ -180,6 +250,12 @@ const PostGenerator = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTopicSelect = (topicName: string) => {
+    setFormData({...formData, topic: topicName});
+    setSearchTerm(topicName);
+    setShowTopicDropdown(false);
   };
 
   if (isLoading) {
@@ -205,21 +281,53 @@ const PostGenerator = () => {
           {/* Form Column */}
           <div className="space-y-4 sm:space-y-6 bg-white p-4 sm:p-6 rounded-lg shadow-sm order-1 md:order-1">
             <h2 className="text-lg sm:text-xl font-semibold">What's your topic?</h2>
-            <Select
-              value={formData.topic}
-              onValueChange={(value) => setFormData({...formData, topic: value})}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select topic" />
-              </SelectTrigger>
-              <SelectContent>
-                {options.topics.map((topic) => (
-                  <SelectItem key={topic.topic_id} value={topic.topic_name}>
-                    {topic.topic_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {/* Custom Combobox Implementation */}
+            <div className="topic-combobox-container relative">
+              <div className="flex">
+                <Input
+                  type="text"
+                  placeholder="Search or select a topic"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setSearchTerm(newValue);
+                    setFormData({...formData, topic: newValue});
+                    setShowTopicDropdown(true);
+                  }}
+                  onClick={() => setShowTopicDropdown(true)}
+                  className="w-full"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowTopicDropdown(!showTopicDropdown)}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {showTopicDropdown && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {filteredTopics.length > 0 ? (
+                    filteredTopics.map((topic) => (
+                      <div
+                        key={topic.topic_id}
+                        className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                          formData.topic === topic.topic_name ? 'bg-gray-100' : ''
+                        }`}
+                        onClick={() => handleTopicSelect(topic.topic_name)}
+                      >
+                        {topic.topic_name}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500">No topics found</div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div>
               <h3 className="font-medium mb-2 text-sm sm:text-base">Language</h3>

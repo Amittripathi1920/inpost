@@ -52,7 +52,8 @@ const Profile = () => {
     try {
       const updatedProfileImage = imageBase64 || profileImage;
       const success = await updateProfile({
-        name,
+
+        displayName: name,
         email,
         profile_image: updatedProfileImage,
       });
@@ -149,5 +150,4 @@ const Profile = () => {
     </div>
   );
 };
-
 export default Profile;
