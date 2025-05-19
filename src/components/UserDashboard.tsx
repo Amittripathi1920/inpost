@@ -1,28 +1,23 @@
 import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import { useAuth } from "@/hooks/useAuth";
-import { getUserGeneratedPosts } from "@/utils/edgeFunctions";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
+import { useAuth } from "@/hooks/useAuth";
+import { getUserGeneratedPosts, getFilteredPostsByDateRange } from "@/utils/edgeFunctions";
+import { COLOR_OPTIONS, rgbToHsl, extractHashtags, exportPostsToCsv } from "@/utils/dashboardUtils";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { MobileFilterPanel } from "@/components/dashboard/MobileFilterPanel";
+import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
+import { TopicDistribution } from "@/components/dashboard/TopicDistribution";
+import { PostLengthDistribution } from "@/components/dashboard/PostLengthDistribution";
+import { PostsByMonthChart } from "@/components/dashboard/PostsByMonth";
+import { LanguageAnalysis } from "@/components/dashboard/LanguageAnalysis";
+import { ToneAnalysis } from "@/components/dashboard/ToneAnalysis";
+import { HashtagAnalysis } from "@/components/dashboard/HashtagAnalysis";
+import { RecentPosts } from "@/components/dashboard/RecentPosts";
+import { PostsTable } from "@/components/dashboard/PostsTable";
 
 interface TopicCount {
   name: string;
@@ -32,6 +27,12 @@ interface TopicCount {
 interface LengthData {
   name: string;
   count: number;
+}
+
+interface HashtagAnalysisProps {
+  hashtagData: { tag: string; count: number }[];
+  themeColor: string;
+  className?: string;
 }
 
 interface PostsByMonth {
@@ -46,55 +47,50 @@ interface Post {
   topic?: {
     topic_name: string;
   };
+  tone?: {
+    tone_name: string;
+  };
+  language?: {
+    language_name: string;
+  };
+  length?: {
+    length_type: string;
+  };
   hashtags?: string;
 }
 
-const COLOR_OPTIONS = [
-  { name: "Default", color: "#8884d8" },
-  { name: "Red", color: "#ef4444" },
-  { name: "Rose", color: "#f43f5e" },
-  { name: "Orange", color: "#f97316" },
-  { name: "Green", color: "#22c55e" },
-  { name: "Blue", color: "#3b82f6" },
-  { name: "Yellow", color: "#eab308" },
-  { name: "Violet", color: "#8b5cf6" },
-];
-
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s, l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0; // achromatic
-  } else {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-      case g: h = ((b - r) / d + 2); break;
-      case b: h = ((r - g) / d + 4); break;
-    }
-    h *= 60;
-  }
-
-  return [h, s * 100, l * 100];
-}
-
-
 const UserDashboard = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [topicCounts, setTopicCounts] = useState<TopicCount[]>([]);
   const [lengthData, setLengthData] = useState<LengthData[]>([]);
   const [postsByMonth, setPostsByMonth] = useState<PostsByMonth[]>([]);
+  const [toneData, setToneData] = useState<TopicCount[]>([]);
+  const [languageData, setLanguageData] = useState<TopicCount[]>([]);
+  const [hashtagData, setHashtagData] = useState<{tag: string; count: number}[]>([]);
   const [themeColor, setThemeColor] = useState<string>("#8884d8");
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
+  const [filters, setFilters] = useState({
+    topic: "all",
+    length: "all",
+    tone: "all",
+    language: "all",
+  });
 
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Options for filters
+  const [filterOptions, setFilterOptions] = useState({
+    topics: [] as string[],
+    lengths: [] as string[],
+    tones: [] as string[],
+    languages: [] as string[],
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem("dashboard-theme-color");
@@ -110,9 +106,20 @@ const UserDashboard = () => {
 
       try {
         setLoading(true);
-        const userPosts = await getUserGeneratedPosts(user.user_id);
+        let userPosts: Post[];
+        
+        if (dateRange?.from && dateRange?.to) {
+  userPosts = await getFilteredPostsByDateRange({
+    from: dateRange.from,
+    to: dateRange.to
+  });
+} else {
+  userPosts = await getUserGeneratedPosts();
+}
         
         if (!userPosts || userPosts.length === 0) {
+          setPosts([]);
+          setFilteredPosts([]);
           setLoading(false);
           return;
         }
@@ -126,43 +133,21 @@ const UserDashboard = () => {
         }, {});
         setExpandedPosts(initialExpandedState);
 
-        // Topic counts
-        const topicMap: Record<string, number> = {};
-        userPosts.forEach((post) => {
-          const topic = post.topic?.topic_name || "Unknown";
-          topicMap[topic] = (topicMap[topic] || 0) + 1;
+        // Extract filter options
+        const topicOptions = [...new Set(userPosts.map(post => post.topic?.topic_name || "Unknown"))];
+        const lengthOptions = [...new Set(userPosts.map(post => post.length?.length_type || "Unknown"))];
+        const toneOptions = [...new Set(userPosts.map(post => post.tone?.tone_name || "Unknown"))];
+        const languageOptions = [...new Set(userPosts.map(post => post.language?.language_name || "Unknown"))];
+        
+        setFilterOptions({
+          topics: topicOptions,
+          lengths: lengthOptions,
+          tones: toneOptions,
+          languages: languageOptions,
         });
-        const topicArray = Object.entries(topicMap)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count);
-        setTopicCounts(topicArray);
 
-        // Length categories
-        const lengthCategories = [
-          { name: "Short (<100 words)", count: 0 },
-          { name: "Medium (100-300 words)", count: 0 },
-          { name: "Long (>300 words)", count: 0 },
-        ];
-        userPosts.forEach((post) => {
-          const wordCount = post.generated_post?.split(/\s+/)?.length || 0;
-          if (wordCount < 100) lengthCategories[0].count++;
-          else if (wordCount < 300) lengthCategories[1].count++;
-          else lengthCategories[2].count++;
-        });
-        setLengthData(lengthCategories);
-
-        // Posts by month
-        const monthMap: Record<string, number> = {};
-        userPosts.forEach((post) => {
-          const date = new Date(post.created_at);
-          const monthName = date.toLocaleString("default", { month: "long" });
-          monthMap[monthName] = (monthMap[monthName] || 0) + 1;
-        });
-        const monthArray = Object.entries(monthMap).map(([name, count]) => ({
-          name,
-          count,
-        }));
-        setPostsByMonth(monthArray);
+        // Apply initial filtering
+        applyFilters(userPosts);
       } catch (error) {
         console.error("Failed to load posts:", error);
         toast({
@@ -176,7 +161,125 @@ const UserDashboard = () => {
     };
 
     loadPosts();
-  }, [user, toast]);
+  }, [user, toast, dateRange]);
+
+  // Apply filters to posts
+  const applyFilters = (postsToFilter = posts) => {
+    const filtered = postsToFilter.filter(post => {
+      const topicMatch = filters.topic === "all" || post.topic?.topic_name === filters.topic;
+      const lengthMatch = filters.length === "all" || post.length?.length_type === filters.length;
+      const toneMatch = filters.tone === "all" || post.tone?.tone_name === filters.tone;
+      const languageMatch = filters.language === "all" || post.language?.language_name === filters.language;
+      
+      return topicMatch && lengthMatch && toneMatch && languageMatch;
+    });
+    
+    setFilteredPosts(filtered);
+    
+    // Update analytics based on filtered posts
+    updateAnalytics(filtered);
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilters({
+      topic: "all",
+      length: "all",
+      tone: "all",
+      language: "all",
+    });
+    setDateRange(undefined);
+    
+    // Re-apply filters (which will now show all posts)
+    applyFilters();
+  };
+
+  // Update analytics based on filtered posts
+  const updateAnalytics = (filteredPosts: Post[]) => {
+    // Topic counts
+    const topicMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const topic = post.topic?.topic_name || "Unknown";
+      topicMap[topic] = (topicMap[topic] || 0) + 1;
+    });
+    const topicArray = Object.entries(topicMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+    setTopicCounts(topicArray);
+
+    // Length categories
+    const lengthCategories = [
+      { name: "Short (<100 words)", count: 0 },
+      { name: "Medium (100-300 words)", count: 0 },
+      { name: "Long (>300 words)", count: 0 },
+    ];
+    filteredPosts.forEach((post) => {
+      const wordCount = post.generated_post?.split(/\s+/)?.length || 0;
+      if (wordCount < 100) lengthCategories[0].count++;
+      else if (wordCount < 300) lengthCategories[1].count++;
+      else lengthCategories[2].count++;
+    });
+    setLengthData(lengthCategories);
+
+    // Posts by month
+    const monthMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const date = new Date(post.created_at);
+      const monthName = date.toLocaleString("default", { month: "long" });
+      monthMap[monthName] = (monthMap[monthName] || 0) + 1;
+    });
+    const monthArray = Object.entries(monthMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => {
+        const months = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+        return months.indexOf(a.name) - months.indexOf(b.name);
+      });
+    setPostsByMonth(monthArray);
+
+    // Tone analysis
+    const toneMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const tone = post.tone?.tone_name || "Unknown";
+      toneMap[tone] = (toneMap[tone] || 0) + 1;
+    });
+    const toneArray = Object.entries(toneMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+    setToneData(toneArray);
+
+    // Language analysis
+    const languageMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const language = post.language?.language_name || "Unknown";
+      languageMap[language] = (languageMap[language] || 0) + 1;
+    });
+    const languageArray = Object.entries(languageMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+    setLanguageData(languageArray);
+
+    // Hashtag analysis
+    const hashtagMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const hashtags = extractHashtags(post.generated_post);
+      hashtags.forEach(tag => {
+        hashtagMap[tag] = (hashtagMap[tag] || 0) + 1;
+      });
+    });
+    const hashtagArray = Object.entries(hashtagMap)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10 hashtags
+    setHashtagData(hashtagArray);
+  };
+
+  // Effect to apply filters when they change
+  useEffect(() => {
+    if (posts.length > 0) {
+      applyFilters();
+    }
+  }, [filters]);
 
   const handleThemeSelect = (color: string) => {
     setThemeColor(color);
@@ -195,6 +298,15 @@ const UserDashboard = () => {
     toast({
       title: "Copied to clipboard!",
       duration: 2000,
+    });
+  };
+
+  const handleExportToCsv = () => {
+    exportPostsToCsv(filteredPosts);
+    toast({
+      title: "Export Successful",
+      description: "Your posts have been exported to CSV",
+      duration: 3000,
     });
   };
 
@@ -234,194 +346,173 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Theme Selector */}
-      <Card className="flex items-center w-full">
-        <CardHeader>
-          <CardDescription>Pick Your Favorite Theme</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2 rounded-2xl items-center p-0">
-          {COLOR_OPTIONS.map((option) => (
-            <Button
-              key={option.name}
-              variant={themeColor === option.color ? "default" : "outline"}
-              onClick={() => handleThemeSelect(option.color)}
-              className="w-6 h-6 rounded-full border-2"
-              style={{
-                backgroundColor: option.color,
-                // color: "#fff",
-                border:
-                  themeColor === option.color ? `3px solid ${option.color}` : "none",
-                 // padding:
-                 //  themeColor === option.color ? "0px 4px" : "none",
-              }}
-            >
-{/*               {option.name} */}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
+    <div className="flex flex-col md:flex-row h-full">
+      <div className="hidden md:block md:w-64 lg:w-72 shrink-0 h-full">
+        <DashboardSidebar
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
+          exportToCsv={handleExportToCsv}
+          topicOptions={filterOptions.topics}
+          lengthOptions={filterOptions.lengths}
+          toneOptions={filterOptions.tones}
+          languageOptions={filterOptions.languages}
+          themeColor={themeColor}
+          setThemeColor={handleThemeSelect}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+      </div>
 
-      {/* Posts Summary */}
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle>Posts Summary</CardTitle>
-          <CardDescription>Overview of your LinkedIn post generation activity</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="bg-secondary/50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground">Total Posts</p>
-              <p className="text-3xl font-bold">{posts.length}</p>
-            </div>
-            <div className="bg-secondary/50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground">Topics Used</p>
-              <p className="text-3xl font-bold">{topicCounts.length}</p>
-            </div>
-            <div className="bg-secondary/50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground">Most Common Topic</p>
-              <p className="text-3xl font-bold">
-                {topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
-              </p>
-            </div>
+      {/* Mobile Header and Filters */}
+      <DashboardHeader
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        showFilters={showMobileFilters}
+        setShowFilters={setShowMobileFilters}
+      />
+
+      <MobileFilterPanel
+        show={showMobileFilters}
+        onClose={() => setShowMobileFilters(false)}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        topicOptions={filterOptions.topics}
+        lengthOptions={filterOptions.lengths}
+        toneOptions={filterOptions.tones}
+        languageOptions={filterOptions.languages}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 p-4 md:p-6 overflow-auto">
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <DashboardSummary
+              totalPosts={filteredPosts.length}
+              topicsCount={topicCounts.length}
+              mostCommonTopic={topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
+            />
+            
+            <TopicDistribution 
+              topicCounts={topicCounts} 
+              themeColor={themeColor} 
+              rgbToHsl={rgbToHsl} 
+            />
+            
+            <PostLengthDistribution 
+              lengthData={lengthData} 
+              themeColor={themeColor} 
+            />
+            
+            <PostsByMonthChart 
+              postsByMonth={postsByMonth} 
+              themeColor={themeColor} 
+            />
+            
+            <RecentPosts
+              className="col-span-full"
+              posts={filteredPosts.slice(0, 5)}
+              expandedPosts={expandedPosts}
+              toggleExpandPost={toggleExpandPost}
+              copyToClipboard={copyToClipboard}
+            />
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Topic Distribution */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Topics Distribution</CardTitle>
-          <CardDescription>Frequency of topics used in your posts</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          {topicCounts.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={topicCounts.slice(0, 6)}
-                  cx="50%"
-                  cy="50%"
-                  labelLine
-                  outerRadius={80}
-                  fill={themeColor}
-                  dataKey="count"
-                  nameKey="name"
-                  label={(entry) => entry.name}
-                >
-                  {topicCounts.slice(0, 6).map((_, index) => {
-                    // Generate color variations by shifting hue
-                    const hueRotate = index * 20;
-                    const base = document.createElement("div");
-                    base.style.color = themeColor;
-                    document.body.appendChild(base);
-                    const rgb = getComputedStyle(base).color;
-                    document.body.removeChild(base);
-                  
-                    const match = rgb.match(/\d+/g);
-                    const [r, g, b] = match ? match.map(Number) : [136, 132, 216]; // fallback to default
-                    const hsl = rgbToHsl(r, g, b);
-                    hsl[0] = (hsl[0] + hueRotate) % 360;
-                    const color = `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)`;
-                  
-                    return <Cell key={`cell-${index}`} fill={color} />;
-                  })} 
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-muted-foreground">No data available</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Content Analysis Tab */}
+        {activeTab === "content" && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <TopicDistribution 
+              topicCounts={topicCounts} 
+              themeColor={themeColor} 
+              rgbToHsl={rgbToHsl} 
+            />
+            
+            <PostLengthDistribution 
+              lengthData={lengthData} 
+              themeColor={themeColor} 
+            />
+            
+            <ToneAnalysis 
+              toneData={toneData} 
+              themeColor={themeColor} 
+            />
+            
+            <LanguageAnalysis 
+              languageData={languageData} 
+              themeColor={themeColor} 
+            />
+            
+            <HashtagAnalysis 
+              className="col-span-full"
+              hashtagData={hashtagData} 
+              themeColor={themeColor} 
+            />
+          </div>
+        )}
 
-      {/* Post Length Distribution */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Post Length Distribution</CardTitle>
-          <CardDescription>Distribution of your posts by length categories</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          {lengthData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={lengthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill={themeColor} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-muted-foreground">No data available</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Trends Tab */}
+        {activeTab === "trends" && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <PostsByMonthChart 
+              postsByMonth={postsByMonth} 
+              themeColor={themeColor} 
+            />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="card-title">Activity Heatmap</CardTitle>
+                <CardDescription className="card-description">Your posting frequency by day and time</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">Coming soon</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="card-title">Engagement Prediction</CardTitle>
+                <CardDescription className="card-description">Estimated engagement based on post attributes</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">Coming soon</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="card-title">Topic Trends</CardTitle>
+                <CardDescription className="card-description">How your topic choices have evolved over time</CardDescription>
+              </CardHeader>
+              <CardContent className="h-80">
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-muted-foreground">Coming soon</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-      {/* Recent Posts */}
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle>Recent Posts</CardTitle>
-          <CardDescription>Your most recently generated LinkedIn posts</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 max-h-[500px] overflow-y-auto">
-          {posts.length > 0 ? (
-            posts.slice(0, 5).map((post) => (
-              <div key={post.id} className="border rounded-lg p-4 transition-all duration-200 hover:shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{post.topic?.topic_name || "Unknown Topic"}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(post.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="mb-2">
-                  <p 
-                    className={`text-sm text-muted-foreground transition-all duration-300 ${
-                      expandedPosts[post.id] ? "" : "line-clamp-3"
-                    }`}
-                  >
-                    {post.generated_post || "No content available"}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-primary truncate max-w-[70%]">
-                    {post.hashtags || "No hashtags"}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => toggleExpandPost(post.id)}
-                    >
-                      {expandedPosts[post.id] ? "Show Less" : "Show More"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => copyToClipboard(post.generated_post)}
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <p>You haven't generated any posts yet.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+        {/* Posts Tab */}
+        {activeTab === "posts" && (
+          <PostsTable 
+            posts={filteredPosts}
+            copyToClipboard={copyToClipboard}
+          />
+        )}
+      </div>
+    </div> 
+    );
 };
 
 export default UserDashboard;

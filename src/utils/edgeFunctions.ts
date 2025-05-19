@@ -1,4 +1,13 @@
 import { supabase } from "@/lib/supabaseClient";
+import { useQuery } from "@tanstack/react-query";
+
+// Example of using React Query for caching options data
+export function useOptionsData(category: string, userId?: string) {
+  return useQuery({
+    queryKey: ["options", category, userId],
+    queryFn: () => getOptions(category, userId),
+  });
+}
 
 // Fetch dropdown options based on category
 export async function getOptions(category: string, userId?: string): Promise<any[]> {
@@ -81,7 +90,6 @@ export async function getFilteredPostsByDateRange(dateRange: { from: Date, to: D
   if (error) throw new Error(error.message);
   return data;
 }
-
 // NEW FUNCTIONS FOR PostGenerator.tsx
 
 // Get user profile data
