@@ -1,50 +1,37 @@
 import { useEffect, useState } from "react";
-import { TopicTrendsChart } from "@/components/dashboard/TopicTrendsChart";
-import { EngagementPredictionChart } from "@/components/dashboard/EngagementPredictionChart";
-import { ActivityHeatmapChart } from "@/components/dashboard/ActivityHeatmapChart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DateRange } from "react-day-picker";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserGeneratedPosts, getFilteredPostsByDateRange } from "@/utils/edgeFunctions";
 import { COLOR_OPTIONS, rgbToHsl, extractHashtags, exportPostsToCsv } from "@/utils/dashboardUtils";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { MobileFilterPanel } from "@/components/dashboard/MobileFilterPanel";
-import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
+import { getStorageItem, setStorageItem } from "@/utils/storage";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+// Import visualization components
 import { TopicDistribution } from "@/components/dashboard/TopicDistribution";
 import { PostLengthDistribution } from "@/components/dashboard/PostLengthDistribution";
 import { PostsByMonthChart } from "@/components/dashboard/PostsByMonth";
-import { LanguageAnalysis } from "@/components/dashboard/LanguageAnalysis";
 import { ToneAnalysis } from "@/components/dashboard/ToneAnalysis";
+import { LanguageAnalysis } from "@/components/dashboard/LanguageAnalysis";
 import { HashtagAnalysis } from "@/components/dashboard/HashtagAnalysis";
+import { TopicTrendsChart } from "@/components/dashboard/TopicTrendsChart";
+import { EngagementPredictionChart } from "@/components/dashboard/EngagementPredictionChart";
+import { ActivityHeatmapChart } from "@/components/dashboard/ActivityHeatmapChart";
 import { RecentPosts } from "@/components/dashboard/RecentPosts";
 import { PostsTable } from "@/components/dashboard/PostsTable";
-import { getStorageItem, setStorageItem } from "@/utils/storage";
-import { Button } from "@/components/ui/button";
-import {
-  Home,
-  BarChart2,
-  TrendingUp,
-  FileText,
-  Download,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Search,
-  X,
-  RefreshCw,
-  Palette,
-  Calendar as CalendarIcon
-} from "lucide-react";
+import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 
+// Import UI components
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 import {
   DropdownMenu,
@@ -55,19 +42,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-import { FilterPanel } from "@/components/dashboard/FilterPanel";
-
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,
   SheetContent,
@@ -76,13 +50,29 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 
+// Import icons
+import {
+  Home,
+  BarChart2,
+  TrendingUp,
+  FileText,
+  Download,
+  Settings,
+  Filter,
+  Search,
+  X,
+  RefreshCw,
+  Palette,
+  Plus,
+  Calendar,
+  ChevronLeft
+} from "lucide-react";
+
+// Import filter panel
+import { FilterPanel } from "@/components/dashboard/FilterPanel";
+
+// Define interfaces
 interface TopicCount {
   name: string;
   count: number;
@@ -91,12 +81,6 @@ interface TopicCount {
 interface LengthData {
   name: string;
   count: number;
-}
-
-interface HashtagAnalysisProps {
-  hashtagData: { tag: string; count: number }[];
-  themeColor: string;
-  className?: string;
 }
 
 interface PostsByMonth {
@@ -124,6 +108,7 @@ interface Post {
 }
 
 const UserDashboard = () => {
+  // State management
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [topicCounts, setTopicCounts] = useState<TopicCount[]>([]);
@@ -137,23 +122,14 @@ const UserDashboard = () => {
   const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>("overview");
-  const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [filters, setFilters] = useState({
     topic: "all",
     length: "all",
     tone: "all",
     language: "all",
   });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [showThemePanel, setShowThemePanel] = useState<boolean>(false);
-  const [topicTrendsData, setTopicTrendsData] = useState<any[]>([]);
-  const isMobile = useIsMobile();
-  const [sheetOpen, setSheetOpen] = useState<boolean>(false);
-
-  const { toast } = useToast();
-  const { user } = useAuth();
 
   // Options for filters
   const [filterOptions, setFilterOptions] = useState({
@@ -162,6 +138,11 @@ const UserDashboard = () => {
     tones: [] as string[],
     languages: [] as string[],
   });
+
+  // Hooks
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   // Active filters count for badge
   const activeFiltersCount = [
@@ -172,20 +153,13 @@ const UserDashboard = () => {
     dateRange !== undefined
   ].filter(Boolean).length;
 
+  // Load theme from storage
   useEffect(() => {
     const saved = getStorageItem("dashboard-theme-color");
     if (saved) setThemeColor(saved);
-    
-    const savedSidebarState = getStorageItem("dashboard-sidebar-collapsed");
-    if (savedSidebarState !== null) {
-      setSidebarCollapsed(savedSidebarState === "true");
-    }
   }, []);
 
-  useEffect(() => {
-    setStorageItem("dashboard-sidebar-collapsed", String(sidebarCollapsed));
-  }, [sidebarCollapsed]);
-
+  // Load posts data
   useEffect(() => {
     const loadPosts = async () => {
       if (!user?.user_id) {
@@ -199,8 +173,8 @@ const UserDashboard = () => {
         
         if (dateRange?.from && dateRange?.to) {
           // Format dates properly for the API
-          const from = dateRange.from.toISOString().split('T')[0]; // YYYY-MM-DD
-          const to = dateRange.to.toISOString().split('T')[0]; // YYYY-MM-DD
+          const from = dateRange.from.toISOString().split('T')[0];
+          const to = dateRange.to.toISOString().split('T')[0];
           
           try {
             userPosts = await getFilteredPostsByDateRange({
@@ -209,10 +183,8 @@ const UserDashboard = () => {
             });
           } catch (error) {
             console.error("Error with date filtering:", error);
-            // Fallback to getting all posts if date filtering fails
             userPosts = await getUserGeneratedPosts();
             
-            // Show a toast to inform the user
             toast({
               title: "Date filtering failed",
               description: "Showing all posts instead",
@@ -262,7 +234,6 @@ const UserDashboard = () => {
           variant: "destructive",
         });
         
-        // Set empty arrays to prevent further errors
         setPosts([]);
         setFilteredPosts([]);
       } finally {
@@ -327,24 +298,18 @@ const UserDashboard = () => {
       .sort((a, b) => b.count - a.count);
     setTopicCounts(topicArray);
 
-    // Length categories based on the length types in the posts
+    // Length categories
     const lengthMap: Record<string, number> = {};
-
     filteredPosts.forEach((post) => {
       const lengthType = post.length?.length_type || "Unknown";
       lengthMap[lengthType] = (lengthMap[lengthType] || 0) + 1;
     });
-
-    // Convert to array format for the chart
     const lengthArray = Object.entries(lengthMap)
       .map(([name, count]) => ({ name, count }))
-      // Optional: sort by a specific order if needed
       .sort((a, b) => {
-        // Custom sort order for length types
         const order = ["Short", "Medium", "Long"];
         return order.indexOf(a.name) - order.indexOf(b.name);
       });
-
     setLengthData(lengthArray);
 
     // Posts by month
@@ -407,16 +372,13 @@ const UserDashboard = () => {
     }
   }, [filters, searchQuery]);
 
+  // Theme handling
   const handleThemeSelect = (color: string) => {
     setThemeColor(color);
     setStorageItem("dashboard-theme-color", color);
-    
-    // Close the theme panel if it's open
-    if (showThemePanel) {
-      setShowThemePanel(false);
-    }
   };
 
+  // Post interaction functions
   const toggleExpandPost = (postId: string) => {
     setExpandedPosts(prev => ({
       ...prev,
@@ -459,14 +421,8 @@ const UserDashboard = () => {
     }
   };
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
   const handleSearch = () => {
-    setIsSearching(true);
     applyFilters();
-    setIsSearching(false);
   };
 
   if (loading) {
@@ -481,115 +437,95 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar - Only show for desktop */}
-      {!isMobile && (
-        <aside 
-          className={`fixed inset-y-0 left-0 z-20 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ${
-            sidebarCollapsed ? "w-16" : "w-64"
-          } md:relative`}
-        >
-          {/* Sidebar Header */}
-          <div className="flex h-16 items-center justify-between border-b px-4">
-            {!sidebarCollapsed && (
-              <h2 className="text-lg font-semibold">InPost Dashboard</h2>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleSidebar}
-              className={sidebarCollapsed ? "mx-auto" : ""}
-            >
-              {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-            </Button>
-          </div>
-          
-          {/* Sidebar Navigation */}
-          <nav className="flex-1 overflow-y-auto p-2">
-            <ul className="space-y-2">
-              <li>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTab === "overview" ? "default" : "ghost"}
-                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                        onClick={() => setActiveTab("overview")}
+    <div className="min-h-screen bg-gray-50 pb-16">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            <h1 className="text-xl font-bold">InPost Analytics</h1>
+            
+            <div className="flex items-center space-x-2">
+              {/* Search - Hidden on mobile, shown on larger screens */}
+              <div className="relative hidden md:block">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search posts..."
+                  className="w-[200px] pl-8 md:w-[300px]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Filter Button */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-1">
+                    <Filter className="h-4 w-4" />
+                    <span className="hidden md:inline">Filters</span>
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[340px] p-4" align="end">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">Filter Posts</h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={resetFilters}
+                        className="h-8 px-2 text-xs"
                       >
-                        <Home className="h-5 w-5 mr-2" />
-                        {!sidebarCollapsed && <span>Overview</span>}
+                        <RefreshCw className="mr-1 h-3 w-3" />
+                        Reset
                       </Button>
-                    </TooltipTrigger>
-                    {sidebarCollapsed && <TooltipContent side="right">Overview</TooltipContent>}
-                  </Tooltip>
-                </TooltipProvider>
-              </li>
-              <li>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTab === "content" ? "default" : "ghost"}
-                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                        onClick={() => setActiveTab("content")}
-                      >
-                        <BarChart2 className="h-5 w-5 mr-2" />
-                        {!sidebarCollapsed && <span>Content Analysis</span>}
-                      </Button>
-                    </TooltipTrigger>
-                    {sidebarCollapsed && <TooltipContent side="right">Content Analysis</TooltipContent>}
-                  </Tooltip>
-                </TooltipProvider>
-              </li>
-              <li>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTab === "trends" ? "default" : "ghost"}
-                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                        onClick={() => setActiveTab("trends")}
-                      >
-                        <TrendingUp className="h-5 w-5 mr-2" />
-                        {!sidebarCollapsed && <span>Trends</span>}
-                      </Button>
-                    </TooltipTrigger>
-                    {sidebarCollapsed && <TooltipContent side="right">Trends</TooltipContent>}
-                  </Tooltip>
-                </TooltipProvider>
-              </li>
-              <li>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTab === "posts" ? "default" : "ghost"}
-                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                        onClick={() => setActiveTab("posts")}
-                      >
-                        <FileText className="h-5 w-5 mr-2" />
-                        {!sidebarCollapsed && <span>All Posts</span>}
-                      </Button>
-                    </TooltipTrigger>
-                    {sidebarCollapsed && <TooltipContent side="right">All Posts</TooltipContent>}
-                  </Tooltip>
-                </TooltipProvider>
-              </li>
-            </ul>
-          </nav>
-          
-          {/* Theme Section */}
-          <div className="border-t p-4">
-            {!sidebarCollapsed && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Theme Colors</h3>
-                  <div className="flex flex-wrap gap-2">
+                    </div>
+                    
+                    <FilterPanel
+                      dateRange={dateRange}
+                      setDateRange={setDateRange}
+                      filters={filters}
+                      setFilters={setFilters}
+                      resetFilters={resetFilters}
+                      topicOptions={filterOptions.topics}
+                      lengthOptions={filterOptions.lengths}
+                      toneOptions={filterOptions.tones}
+                      languageOptions={filterOptions.languages}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Theme Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Palette className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Theme Colors</DropdownMenuLabel>
+                  <div className="flex flex-wrap gap-2 p-2">
                     {COLOR_OPTIONS.map((color, index) => (
                       <button
-                        key={`color-${index}`}
+                        key={`dropdown-color-${index}`}
                         className={`w-6 h-6 rounded-full ${
-                          themeColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
+                          themeColor === color ? "ring-2 ring-offset-1 ring-primary" : ""
                         }`}
                         style={{ backgroundColor: color }}
                         onClick={() => handleThemeSelect(color)}
@@ -597,574 +533,522 @@ const UserDashboard = () => {
                       />
                     ))}
                   </div>
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full flex items-center gap-2"
-                  onClick={handleExportToCsv}
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Export to CSV</span>
-                </Button>
-              </div>
-            )}
-            {sidebarCollapsed && (
-              <div className="flex flex-col items-center space-y-4">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setShowThemePanel(true);
-                          setSidebarCollapsed(false);
-                        }}
-                      >
-                        <Palette className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Theme Settings</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleExportToCsv}
-                      >
-                        <Download className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Export to CSV</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Actions Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Dashboard Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleExportToCsv}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export to CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={resetFilters}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reset All Filters
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </aside>
-      )}
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        {/* Header */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
-          <h1 className="text-xl font-semibold">
-            {activeTab === "overview" && "Dashboard Overview"}
-            {activeTab === "content" && "Content Analysis"}
-            {activeTab === "trends" && "Trend Analysis"}
-            {activeTab === "posts" && "All Posts"}
-          </h1>
           
-          <div className="flex items-center space-x-2">
-            {/* Search */}
-            <div className="relative hidden md:block">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search posts..."
-                className="w-[200px] pl-8 md:w-[300px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+          {/* Tab Navigation */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="trends">Trends</TabsTrigger>
+              <TabsTrigger value="posts">Posts</TabsTrigger>
+            </TabsList>
             
-            {/* Filter Button */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Filter className="h-4 w-4" />
-                  <span className="hidden md:inline">Filters</span>
-                  {activeFiltersCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
-                      {activeFiltersCount}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[340px] p-4" align="end">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium">Filter Posts</h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={resetFilters}
-                      className="h-8 px-2 text-xs"
-                    >
-                      <RefreshCw className="mr-1 h-3 w-3" />
-                      Reset
-                    </Button>
-                  </div>
-                  
-                  <FilterPanel
-                    dateRange={dateRange}
-                    setDateRange={setDateRange}
-                    filters={filters}
-                    setFilters={setFilters}
-                    resetFilters={resetFilters}
-                    topicOptions={filterOptions.topics}
-                    lengthOptions={filterOptions.lengths}
-                    toneOptions={filterOptions.tones}
-                    languageOptions={filterOptions.languages}
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            {/* Theme Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Palette className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Theme Colors</DropdownMenuLabel>
-                <div className="flex flex-wrap gap-2 p-2">
-                  {COLOR_OPTIONS.map((color, index) => (
-                    <button
-                      key={`dropdown-color-${index}`}
-                      className={`w-6 h-6 rounded-full ${
-                        themeColor === color ? "ring-2 ring-offset-1 ring-primary" : ""
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => handleThemeSelect(color)}
-                      aria-label={`Select ${color} theme`}
+            {/* Tab Content */}
+            <TabsContent value="overview" className="mt-0">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <DashboardSummary
+                  totalPosts={filteredPosts.length}
+                  topicsCount={topicCounts.length}
+                  mostCommonTopic={topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
+                  className="md:col-span-2 lg:col-span-3"
+                />
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Topic Distribution</CardTitle>
+                    <CardDescription>Most frequently used topics</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <TopicDistribution 
+                      topicCounts={topicCounts} 
+                      themeColor={themeColor} 
+                      rgbToHsl={rgbToHsl} 
                     />
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* Settings Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Dashboard Settings</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleExportToCsv}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export to CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={resetFilters}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Reset All Filters
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Post Length</CardTitle>
+                    <CardDescription>Distribution by word count</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <PostLengthDistribution 
+                      lengthData={lengthData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Monthly Activity</CardTitle>
+                    <CardDescription>Posts created per month</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <PostsByMonthChart 
+                      postsByMonth={postsByMonth} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Tone Analysis</CardTitle>
+                    <CardDescription>Post tone distribution</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ToneAnalysis 
+                      toneData={toneData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Language Analysis</CardTitle>
+                    <CardDescription>Post language distribution</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <LanguageAnalysis 
+                      languageData={languageData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Hashtag Analysis</CardTitle>
+                    <CardDescription>Top hashtags</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <HashtagAnalysis 
+                      hashtagData={hashtagData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Topic Trends</CardTitle>
+                    <CardDescription>Topic trends over time</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <TopicTrendsChart 
+                      topicCounts={topicCounts} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Engagement Prediction</CardTitle>
+                    <CardDescription>Engagement prediction</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <EngagementPredictionChart 
+                      topicCounts={topicCounts} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Activity Heatmap</CardTitle>
+                    <CardDescription>Activity heatmap</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ActivityHeatmapChart 
+                      topicCounts={topicCounts} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
 
-        {/* Mobile Search Bar */}
-        {isMobile && (
-          <div className="md:hidden p-4 border-b">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search posts..."
-                className="w-full pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
+                <Card className="md:col-span-2 lg:col-span-3">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Recent Posts</CardTitle>
 
-        {/* Active Filters Display */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 p-4 bg-muted/20">
-            <span className="text-sm font-medium text-muted-foreground">Active filters:</span>
-            {filters.topic !== "all" && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                Topic: {filters.topic}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 p-0 ml-1" 
-                  onClick={() => setFilters({...filters, topic: "all"})}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            )}
-            {filters.length !== "all" && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                Length: {filters.length}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 p-0 ml-1" 
-                  onClick={() => setFilters({...filters, length: "all"})}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            )}
-            {filters.tone !== "all" && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                Tone: {filters.tone}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 p-0 ml-1" 
-                  onClick={() => setFilters({...filters, tone: "all"})}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            )}
-            {filters.language !== "all" && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                Language: {filters.language}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 p-0 ml-1" 
-                  onClick={() => setFilters({...filters, language: "all"})}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            )}
-            {dateRange && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                Date Range
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 p-0 ml-1" 
-                  onClick={() => setDateRange(undefined)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            )}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="ml-auto text-xs h-7" 
-              onClick={resetFilters}
-            >
-              Clear All
-            </Button>
-          </div>
-        )}
+                    <CardDescription>Your latest generated content</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RecentPosts 
+                      posts={filteredPosts.slice(0, 5)}
+                      expandedPosts={expandedPosts}
+                      toggleExpandPost={toggleExpandPost}
+                      copyToClipboard={copyToClipboard}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-        {/* Dashboard Content */}
-        <div className="p-4 md:p-6">
-          {/* Results Count */}
-          {/* <div className="mb-6">
-            <p className="text-sm text-muted-foreground">
-              Showing <span className="font-medium">{filteredPosts.length}</span> of <span className="font-medium">{posts.length}</span> posts
-              {searchQuery && (
-                <> matching "<span className="font-medium">{searchQuery}</span>"</>
-              )}
-            </p>
-          </div> */}
+            <TabsContent value="content" className="mt-0">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Topic Distribution</CardTitle>
+                    <CardDescription>Most frequently used topics</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <TopicDistribution 
+                      topicCounts={topicCounts} 
+                      themeColor={themeColor} 
+                      rgbToHsl={rgbToHsl} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Post Length</CardTitle>
+                    <CardDescription>Distribution by word count</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <PostLengthDistribution 
+                      lengthData={lengthData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Tone Analysis</CardTitle>
+                    <CardDescription>Most used tones in your content</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ToneAnalysis 
+                      toneData={toneData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Language Usage</CardTitle>
+                    <CardDescription>Languages used in your posts</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <LanguageAnalysis 
+                      languageData={languageData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card className="md:col-span-2 lg:col-span-3">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Hashtag Analysis</CardTitle>
+                    <CardDescription>Most frequently used hashtags</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <HashtagAnalysis 
+                      hashtagData={hashtagData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-          {/* Overview Tab */}
-          {activeTab === "overview" && (
-            <div className="grid gap-6 md:grid-cols-2">
-              <DashboardSummary
-                totalPosts={filteredPosts.length}
-                topicsCount={topicCounts.length}
-                mostCommonTopic={topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
-                className="md:col-span-2"
-              />
-              
-              <Card className="overflow-hidden">
+            <TabsContent value="trends" className="mt-0">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Monthly Activity</CardTitle>
+                    <CardDescription>Your post generation over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PostsByMonthChart 
+                      postsByMonth={postsByMonth} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Activity Heatmap</CardTitle>
+                    <CardDescription>Your posting frequency by day and time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ActivityHeatmapChart 
+                      data={[]} // We'll use the sample data in the component for now
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Engagement Prediction</CardTitle>
+                    <CardDescription>Estimated engagement based on post attributes</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EngagementPredictionChart 
+                      data={[]} // We'll use the sample data in the component for now
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Topic Trends</CardTitle>
+                    <CardDescription>How your topic choices have evolved over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TopicTrendsChart 
+                      data={[]} // We'll need to prepare this data
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="posts" className="mt-0">
+              <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Topic Distribution</CardTitle>
-                  <CardDescription>Most frequently used topics</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <TopicDistribution 
-                    topicCounts={topicCounts} 
-                    themeColor={themeColor} 
-                    rgbToHsl={rgbToHsl} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Post Length</CardTitle>
-                  <CardDescription>Distribution by word count</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <PostLengthDistribution 
-                    lengthData={lengthData} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Monthly Activity</CardTitle>
-                  <CardDescription>Posts created per month</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <PostsByMonthChart 
-                    postsByMonth={postsByMonth} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Tone Analysis</CardTitle>
-                  <CardDescription>Most used tones in your content</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ToneAnalysis 
-                    toneData={toneData} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Recent Posts</CardTitle>
-                  <CardDescription>Your latest generated content</CardDescription>
+                  <CardTitle className="text-lg">All Posts</CardTitle>
+                  <CardDescription>Complete list of your generated content</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RecentPosts
-                    posts={filteredPosts.slice(0, 5)}
-                    expandedPosts={expandedPosts}
-                    toggleExpandPost={toggleExpandPost}
+                  <PostsTable 
+                    posts={filteredPosts}
                     copyToClipboard={copyToClipboard}
                   />
                 </CardContent>
               </Card>
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+      
+      {/* Mobile Search Bar */}
+      {isMobile && (
+        <div className="md:hidden p-4 bg-white border-b">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search posts..."
+              className="w-full pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
-          {/* Content Analysis Tab */}
-          {activeTab === "content" && (
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Topic Distribution</CardTitle>
-                  <CardDescription>Most frequently used topics</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <TopicDistribution 
-                    topicCounts={topicCounts} 
-                    themeColor={themeColor} 
-                    rgbToHsl={rgbToHsl} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Post Length</CardTitle>
-                  <CardDescription>Distribution by word count</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <PostLengthDistribution 
-                    lengthData={lengthData} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Tone Analysis</CardTitle>
-                  <CardDescription>Most used tones in your content</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ToneAnalysis 
-                    toneData={toneData} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Language Usage</CardTitle>
-                  <CardDescription>Languages used in your posts</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <LanguageAnalysis 
-                    languageData={languageData} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Hashtag Analysis</CardTitle>
-                  <CardDescription>Most frequently used hashtags</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <HashtagAnalysis 
-                    hashtagData={hashtagData} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
+      {/* Active Filters Display */}
+      {activeFiltersCount > 0 && (
+        <div className="bg-white border-b">
+          <div className="container mx-auto px-4 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Active filters:</span>
+              {filters.topic !== "all" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Topic: {filters.topic}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 p-0 ml-1" 
+                    onClick={() => setFilters({...filters, topic: "all"})}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {filters.length !== "all" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Length: {filters.length}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 p-0 ml-1" 
+                    onClick={() => setFilters({...filters, length: "all"})}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {filters.tone !== "all" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Tone: {filters.tone}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 p-0 ml-1" 
+                    onClick={() => setFilters({...filters, tone: "all"})}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {filters.language !== "all" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Language: {filters.language}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 p-0 ml-1" 
+                    onClick={() => setFilters({...filters, language: "all"})}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {dateRange && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Date Range
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 p-0 ml-1" 
+                    onClick={() => setDateRange(undefined)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-auto text-xs h-7" 
+                onClick={resetFilters}
+              >
+                Clear All
+              </Button>
             </div>
-          )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="container mx-auto px-4 py-6">
+        {/* Results Count */}
+        <div className="mb-4">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{filteredPosts.length}</span> of <span className="font-medium">{posts.length}</span> posts
+            {searchQuery && (
+              <> matching "<span className="font-medium">{searchQuery}</span>"</>
+            )}
+          </p>
+        </div>
+
+        {/* Tab Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="trends">Trends</TabsTrigger>
+            <TabsTrigger value="posts">Posts</TabsTrigger>
+          </TabsList>
+          
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="mt-0">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <DashboardSummary
+                totalPosts={filteredPosts.length}
+                topicsCount={topicCounts.length}
+                mostCommonTopic={topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
+                className="md:col-span-2 lg:col-span-3"
+              />
+              
+              {/* Rest of overview content... */}
+            </div>
+          </TabsContent>
+
+          {/* Content Tab */}
+          <TabsContent value="content" className="mt-0">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Content analysis components... */}
+            </div>
+          </TabsContent>
 
           {/* Trends Tab */}
-          {activeTab === "trends" && (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Monthly Activity</CardTitle>
-                  <CardDescription>Your post generation over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PostsByMonthChart 
-                    postsByMonth={postsByMonth} 
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Heatmap</CardTitle>
-                  <CardDescription>Your posting frequency by day and time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ActivityHeatmapChart 
-                    data={[]} // We'll use the sample data in the component for now
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Engagement Prediction</CardTitle>
-                  <CardDescription>Estimated engagement based on post attributes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <EngagementPredictionChart 
-                    data={[]} // We'll use the sample data in the component for now
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Topic Trends</CardTitle>
-                  <CardDescription>How your topic choices have evolved over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TopicTrendsChart 
-                    data={[]} // We'll need to prepare this data
-                    themeColor={themeColor} 
-                  />
-                </CardContent>
-              </Card>
+          <TabsContent value="trends" className="mt-0">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Trends components... */}
             </div>
-          )}
+          </TabsContent>
 
           {/* Posts Tab */}
-          {activeTab === "posts" && (
+          <TabsContent value="posts" className="mt-0">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">All Posts</CardTitle>
-                <CardDescription>Complete list of your generated content</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PostsTable 
-                  posts={filteredPosts}
-                  copyToClipboard={copyToClipboard}
-                />
-              </CardContent>
+              {/* Posts table... */}
             </Card>
-          )}
-        </div>
-      </main>
+          </TabsContent>
+        </Tabs>
+      </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Action Button */}
       {isMobile && (
-        <>
-          {/* Fixed bottom navigation bar */}
-          <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-40 px-2 py-1">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 w-full">
-                <TabsTrigger value="overview" className="flex flex-col items-center text-xs py-1">
-                  <Home className="h-4 w-4 mb-1" />
-                  <span>Overview</span>
-                </TabsTrigger>
-                <TabsTrigger value="content" className="flex flex-col items-center text-xs py-1">
-                  <BarChart2 className="h-4 w-4 mb-1" />
-                  <span>Content</span>
-                </TabsTrigger>
-                <TabsTrigger value="trends" className="flex flex-col items-center text-xs py-1">
-                  <TrendingUp className="h-4 w-4 mb-1" />
-                  <span>Trends</span>
-                </TabsTrigger>
-                <TabsTrigger value="posts" className="flex flex-col items-center text-xs py-1">
-                  <FileText className="h-4 w-4 mb-1" />
-                  <span>Posts</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+        <Button
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          onClick={() => setSheetOpen(true)}
+        >
+          <Settings className="h-6 w-6" />
+        </Button>
+      )}
 
-          {/* Settings button that opens the sheet */}
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="icon"
-                className="fixed bottom-20 right-4 z-50 rounded-full shadow-md h-12 w-12"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[80vh] overflow-y-auto pb-16">
-              <SheetHeader className="mb-4">
-                <SheetTitle>Dashboard Settings</SheetTitle>
-              </SheetHeader>
-              
-              {/* Filters */}
+      {/* Mobile Settings Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto pb-16">
+          <SheetHeader className="mb-4">
+            <SheetTitle>Dashboard Settings</SheetTitle>
+          </SheetHeader>
+          
+          {/* Filters */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium mb-2">Filter Posts</h3>
               <FilterPanel
                 dateRange={dateRange}
                 setDateRange={setDateRange}
@@ -1177,82 +1061,70 @@ const UserDashboard = () => {
                 languageOptions={filterOptions.languages}
                 className="flex-col"
               />
-              
-              {/* Theme Colors */}
-              <div className="mt-6">
-                <h3 className="text-sm font-medium mb-2">Theme Colors</h3>
-                <div className="flex flex-wrap gap-3">
-                  {COLOR_OPTIONS.map((color, index) => (
-                    <button
-                      key={`color-${index}`}
-                      className={`w-8 h-8 rounded-full ${
-                        themeColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => handleThemeSelect(color)}
-                      aria-label={`Select ${color} theme`}
-                    />
-                  ))}
-                </div>
+            </div>
+            
+            {/* Theme Colors */}
+            <div>
+              <h3 className="text-sm font-medium mb-2">Theme Colors</h3>
+              <div className="flex flex-wrap gap-3">
+                {COLOR_OPTIONS.map((color, index) => (
+                  <button
+                    key={`color-${index}`}
+                    className={`w-8 h-8 rounded-full ${
+                      themeColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => handleThemeSelect(color)}
+                    aria-label={`Select ${color} theme`}
+                  />
+                ))}
               </div>
-              
-              {/* Export Button */}
-              <Button
-                variant="outline"
-                className="w-full mt-6 flex items-center gap-2"
-                onClick={handleExportToCsv}
-              >
-                <Download className="h-4 w-4" />
-                <span>Export to CSV</span>
-              </Button>
-              
-              <SheetClose asChild>
-                <Button 
-                  variant="default" 
-                  className="w-full mt-4 flex items-center justify-center"
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Close Settings
-                </Button>
-              </SheetClose>
-            </SheetContent>
-          </Sheet>
-
-          {/* Add padding to the bottom of the page to account for the fixed navigation */}
-          <div className="pb-16"></div>
-        </>
-      )}
-
-      {/* Theme Panel Modal */}
-      {showThemePanel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg p-6 w-80">
-            <h3 className="text-lg font-semibold mb-4">Choose Theme Color</h3>
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              {COLOR_OPTIONS.map((color, index) => (
-                <button
-                  key={`modal-color-${index}`}
-                  className={`w-12 h-12 rounded-full ${
-                    themeColor === color ? "ring-4 ring-offset-2 ring-primary" : ""
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => handleThemeSelect(color)}
-                  aria-label={`Select ${color} theme`}
-                />
-              ))}
             </div>
-            <div className="flex justify-end">
+            
+            {/* Export Button */}
+            <Button
+              variant="outline"
+              className="w-full mt-6 flex items-center gap-2"
+              onClick={handleExportToCsv}
+            >
+              <Download className="h-4 w-4" />
+              <span>Export to CSV</span>
+            </Button>
+            
+            <SheetClose asChild>
               <Button 
-                onClick={() => setShowThemePanel(false)}
+                variant="default" 
+                className="w-full mt-4 flex items-center justify-center"
               >
-                Close
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Close Settings
               </Button>
+            </SheetClose>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* No Posts State */}
+      {posts.length === 0 && (
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="rounded-full bg-primary/10 p-6 mb-4">
+              <FileText className="h-10 w-10 text-primary" />
             </div>
+            <h2 className="text-xl font-semibold mb-2">No Posts Found</h2>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              You haven't created any posts yet, or no posts match your current filters.
+            </p>
+            <Button onClick={resetFilters}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reset Filters
+            </Button>
           </div>
         </div>
       )}
     </div>
   );
+
 };
 
 export default UserDashboard;

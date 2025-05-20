@@ -16,6 +16,7 @@ import GeneratePost from "@/pages/GeneratePost";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 
+
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
