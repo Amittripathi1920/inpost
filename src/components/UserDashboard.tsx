@@ -67,6 +67,22 @@ import {
 
 import { FilterPanel } from "@/components/dashboard/FilterPanel";
 
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+
 interface TopicCount {
   name: string;
   count: number;
@@ -133,6 +149,8 @@ const UserDashboard = () => {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [showThemePanel, setShowThemePanel] = useState<boolean>(false);
   const [topicTrendsData, setTopicTrendsData] = useState<any[]>([]);
+  const isMobile = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -464,171 +482,173 @@ const UserDashboard = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-20 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ${
-          sidebarCollapsed ? "w-16" : "w-64"
-        } md:relative`}
-      >
-        {/* Sidebar Header */}
-        <div className="flex h-16 items-center justify-between border-b px-4">
-          {!sidebarCollapsed && (
-            <h2 className="text-lg font-semibold">InPost Dashboard</h2>
-          )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar}
-            className={sidebarCollapsed ? "mx-auto" : ""}
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          </Button>
-        </div>
-        
-        {/* Sidebar Navigation */}
-        <nav className="flex-1 overflow-y-auto p-2">
-          <ul className="space-y-2">
-            <li>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTab === "overview" ? "default" : "ghost"}
-                      className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                      onClick={() => setActiveTab("overview")}
-                    >
-                      <Home className="h-5 w-5 mr-2" />
-                      {!sidebarCollapsed && <span>Overview</span>}
-                    </Button>
-                  </TooltipTrigger>
-                  {sidebarCollapsed && <TooltipContent side="right">Overview</TooltipContent>}
-                </Tooltip>
-              </TooltipProvider>
-            </li>
-            <li>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTab === "content" ? "default" : "ghost"}
-                      className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                      onClick={() => setActiveTab("content")}
-                    >
-                      <BarChart2 className="h-5 w-5 mr-2" />
-                      {!sidebarCollapsed && <span>Content Analysis</span>}
-                    </Button>
-                  </TooltipTrigger>
-                  {sidebarCollapsed && <TooltipContent side="right">Content Analysis</TooltipContent>}
-                </Tooltip>
-              </TooltipProvider>
-            </li>
-            <li>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTab === "trends" ? "default" : "ghost"}
-                      className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                      onClick={() => setActiveTab("trends")}
-                    >
-                      <TrendingUp className="h-5 w-5 mr-2" />
-                      {!sidebarCollapsed && <span>Trends</span>}
-                    </Button>
-                  </TooltipTrigger>
-                  {sidebarCollapsed && <TooltipContent side="right">Trends</TooltipContent>}
-                </Tooltip>
-              </TooltipProvider>
-            </li>
-            <li>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTab === "posts" ? "default" : "ghost"}
-                      className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
-                      onClick={() => setActiveTab("posts")}
-                    >
-                      <FileText className="h-5 w-5 mr-2" />
-                      {!sidebarCollapsed && <span>All Posts</span>}
-                    </Button>
-                  </TooltipTrigger>
-                  {sidebarCollapsed && <TooltipContent side="right">All Posts</TooltipContent>}
-                </Tooltip>
-              </TooltipProvider>
-            </li>
-          </ul>
-        </nav>
-        
-        {/* Theme Section */}
-        <div className="border-t p-4">
-          {!sidebarCollapsed && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Theme Colors</h3>
-                <div className="flex flex-wrap gap-2">
-                  {COLOR_OPTIONS.map((color, index) => (
-                    <button
-                      key={`color-${index}`}
-                      className={`w-6 h-6 rounded-full ${
-                        themeColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => handleThemeSelect(color)}
-                      aria-label={`Select ${color} theme`}
-                    />
-                  ))}
+      {/* Sidebar - Only show for desktop */}
+      {!isMobile && (
+        <aside 
+          className={`fixed inset-y-0 left-0 z-20 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ${
+            sidebarCollapsed ? "w-16" : "w-64"
+          } md:relative`}
+        >
+          {/* Sidebar Header */}
+          <div className="flex h-16 items-center justify-between border-b px-4">
+            {!sidebarCollapsed && (
+              <h2 className="text-lg font-semibold">InPost Dashboard</h2>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSidebar}
+              className={sidebarCollapsed ? "mx-auto" : ""}
+            >
+              {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            </Button>
+          </div>
+          
+          {/* Sidebar Navigation */}
+          <nav className="flex-1 overflow-y-auto p-2">
+            <ul className="space-y-2">
+              <li>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTab === "overview" ? "default" : "ghost"}
+                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
+                        onClick={() => setActiveTab("overview")}
+                      >
+                        <Home className="h-5 w-5 mr-2" />
+                        {!sidebarCollapsed && <span>Overview</span>}
+                      </Button>
+                    </TooltipTrigger>
+                    {sidebarCollapsed && <TooltipContent side="right">Overview</TooltipContent>}
+                  </Tooltip>
+                </TooltipProvider>
+              </li>
+              <li>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTab === "content" ? "default" : "ghost"}
+                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
+                        onClick={() => setActiveTab("content")}
+                      >
+                        <BarChart2 className="h-5 w-5 mr-2" />
+                        {!sidebarCollapsed && <span>Content Analysis</span>}
+                      </Button>
+                    </TooltipTrigger>
+                    {sidebarCollapsed && <TooltipContent side="right">Content Analysis</TooltipContent>}
+                  </Tooltip>
+                </TooltipProvider>
+              </li>
+              <li>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTab === "trends" ? "default" : "ghost"}
+                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
+                        onClick={() => setActiveTab("trends")}
+                      >
+                        <TrendingUp className="h-5 w-5 mr-2" />
+                        {!sidebarCollapsed && <span>Trends</span>}
+                      </Button>
+                    </TooltipTrigger>
+                    {sidebarCollapsed && <TooltipContent side="right">Trends</TooltipContent>}
+                  </Tooltip>
+                </TooltipProvider>
+              </li>
+              <li>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTab === "posts" ? "default" : "ghost"}
+                        className={`w-full justify-${sidebarCollapsed ? "center" : "start"}`}
+                        onClick={() => setActiveTab("posts")}
+                      >
+                        <FileText className="h-5 w-5 mr-2" />
+                        {!sidebarCollapsed && <span>All Posts</span>}
+                      </Button>
+                    </TooltipTrigger>
+                    {sidebarCollapsed && <TooltipContent side="right">All Posts</TooltipContent>}
+                  </Tooltip>
+                </TooltipProvider>
+              </li>
+            </ul>
+          </nav>
+          
+          {/* Theme Section */}
+          <div className="border-t p-4">
+            {!sidebarCollapsed && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Theme Colors</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_OPTIONS.map((color, index) => (
+                      <button
+                        key={`color-${index}`}
+                        className={`w-6 h-6 rounded-full ${
+                          themeColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => handleThemeSelect(color)}
+                        aria-label={`Select ${color} theme`}
+                      />
+                    ))}
+                  </div>
                 </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full flex items-center gap-2"
+                  onClick={handleExportToCsv}
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export to CSV</span>
+                </Button>
               </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full flex items-center gap-2"
-                onClick={handleExportToCsv}
-              >
-                <Download className="h-4 w-4" />
-                <span>Export to CSV</span>
-              </Button>
-            </div>
-          )}
-          {sidebarCollapsed && (
-            <div className="flex flex-col items-center space-y-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setShowThemePanel(true);
-                        setSidebarCollapsed(false);
-                      }}
-                    >
-                      <Palette className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Theme Settings</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleExportToCsv}
-                    >
-                      <Download className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Export to CSV</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
-        </div>
-      </aside>
+            )}
+            {sidebarCollapsed && (
+              <div className="flex flex-col items-center space-y-4">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setShowThemePanel(true);
+                          setSidebarCollapsed(false);
+                        }}
+                      >
+                        <Palette className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Theme Settings</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleExportToCsv}
+                      >
+                        <Download className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Export to CSV</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
@@ -757,29 +777,31 @@ const UserDashboard = () => {
         </header>
 
         {/* Mobile Search Bar */}
-        <div className="md:hidden p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search posts..."
-              className="w-full pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+        {isMobile && (
+          <div className="md:hidden p-4 border-b">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search posts..."
+                className="w-full pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Active Filters Display */}
         {activeFiltersCount > 0 && (
@@ -1098,6 +1120,108 @@ const UserDashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <>
+          {/* Fixed bottom navigation bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-40 px-2 py-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="overview" className="flex flex-col items-center text-xs py-1">
+                  <Home className="h-4 w-4 mb-1" />
+                  <span>Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="content" className="flex flex-col items-center text-xs py-1">
+                  <BarChart2 className="h-4 w-4 mb-1" />
+                  <span>Content</span>
+                </TabsTrigger>
+                <TabsTrigger value="trends" className="flex flex-col items-center text-xs py-1">
+                  <TrendingUp className="h-4 w-4 mb-1" />
+                  <span>Trends</span>
+                </TabsTrigger>
+                <TabsTrigger value="posts" className="flex flex-col items-center text-xs py-1">
+                  <FileText className="h-4 w-4 mb-1" />
+                  <span>Posts</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Settings button that opens the sheet */}
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="fixed bottom-20 right-4 z-50 rounded-full shadow-md h-12 w-12"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh] overflow-y-auto pb-16">
+              <SheetHeader className="mb-4">
+                <SheetTitle>Dashboard Settings</SheetTitle>
+              </SheetHeader>
+              
+              {/* Filters */}
+              <FilterPanel
+                dateRange={dateRange}
+                setDateRange={setDateRange}
+                filters={filters}
+                setFilters={setFilters}
+                resetFilters={resetFilters}
+                topicOptions={filterOptions.topics}
+                lengthOptions={filterOptions.lengths}
+                toneOptions={filterOptions.tones}
+                languageOptions={filterOptions.languages}
+                className="flex-col"
+              />
+              
+              {/* Theme Colors */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium mb-2">Theme Colors</h3>
+                <div className="flex flex-wrap gap-3">
+                  {COLOR_OPTIONS.map((color, index) => (
+                    <button
+                      key={`color-${index}`}
+                      className={`w-8 h-8 rounded-full ${
+                        themeColor === color ? "ring-2 ring-offset-2 ring-primary" : ""
+                      }`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => handleThemeSelect(color)}
+                      aria-label={`Select ${color} theme`}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Export Button */}
+              <Button
+                variant="outline"
+                className="w-full mt-6 flex items-center gap-2"
+                onClick={handleExportToCsv}
+              >
+                <Download className="h-4 w-4" />
+                <span>Export to CSV</span>
+              </Button>
+              
+              <SheetClose asChild>
+                <Button 
+                  variant="default" 
+                  className="w-full mt-4 flex items-center justify-center"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Close Settings
+                </Button>
+              </SheetClose>
+            </SheetContent>
+          </Sheet>
+
+          {/* Add padding to the bottom of the page to account for the fixed navigation */}
+          <div className="pb-16"></div>
+        </>
+      )}
 
       {/* Theme Panel Modal */}
       {showThemePanel && (

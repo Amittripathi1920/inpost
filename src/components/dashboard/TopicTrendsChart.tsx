@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import React from "react";
 import {
   ResponsiveContainer,
@@ -17,9 +18,14 @@ interface TopicTrend {
 interface TopicTrendsChartProps {
   data: TopicTrend[];
   themeColor: string;
+  className?: string; // Responsive sizing
 }
 
-export function TopicTrendsChart({ data, themeColor }: TopicTrendsChartProps) {
+export const TopicTrendsChart: React.FC<TopicTrendsChartProps> = ({
+  data, 
+  themeColor,
+  className
+}) => {
   // If no data, return early
   if (!data || data.length === 0) {
     return (
@@ -87,27 +93,32 @@ export function TopicTrendsChart({ data, themeColor }: TopicTrendsChartProps) {
   };
 
   return (
-    <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          {topTopics.map((topic, index) => (
-            <Line
-              key={topic}
-              type="monotone"
-              dataKey={topic}
-              name={topic}
-              stroke={getColor(index, themeColor)}
-              activeDot={{ r: 6 }}
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer 
+      width="100%" 
+      height={300} 
+      className={cn(
+        "w-full h-[250px] md:h-[350px]", 
+        className
+      )}
+    >
+      <LineChart data={data}>
+        <XAxis dataKey="month" />
+        <YAxis />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend />
+        {topTopics.map((topic, index) => (
+          <Line
+            key={topic}
+            type="monotone"
+            dataKey={topic}
+            name={topic}
+            stroke={getColor(index, themeColor)}
+            activeDot={{ r: 6 }}
+            strokeWidth={2}
+            dot={{ r: 4 }}
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
   );
-}
+};

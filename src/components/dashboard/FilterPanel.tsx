@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface FilterPanelProps {
   dateRange: DateRange | undefined;
@@ -23,9 +24,10 @@ interface FilterPanelProps {
   lengthOptions: string[];
   toneOptions: string[];
   languageOptions: string[];
+  className?: string;
 }
 
-export function FilterPanel({
+export const FilterPanel: React.FC<FilterPanelProps> = ({
   dateRange,
   setDateRange,
   filters,
@@ -35,9 +37,10 @@ export function FilterPanel({
   lengthOptions,
   toneOptions,
   languageOptions,
-}: FilterPanelProps) {
+  className,
+}: FilterPanelProps) => {
   return (
-    <div className="space-y-4">
+    <div className={cn("flex flex-col sm:flex-row gap-2 overflow-x-auto", className)}>
       <div>
         <h4 className="text-sm font-medium mb-1">Date Range</h4>
         <Calendar
