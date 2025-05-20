@@ -6,9 +6,10 @@ interface DashboardSummaryProps {
   totalPosts: number;
   topicsCount: number;
   mostCommonTopic: string;
-  // Optional trend data
+  className?: string;
   postsTrend?: number;
 }
+
 
 export function DashboardSummary({ 
   totalPosts, 
@@ -19,11 +20,25 @@ export function DashboardSummary({
   return (
     <Card className="col-span-full">
       <CardHeader>
+
+
         <CardTitle className="card-title">Posts Summary</CardTitle>
         <CardDescription className="card-description">Overview of your LinkedIn post generation activity</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-3">
+
+
+
+
+
+
+
+
+
+
+
+
           <MetricCard
             title="Total Posts"
             value={totalPosts}
