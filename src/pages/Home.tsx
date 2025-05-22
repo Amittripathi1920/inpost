@@ -102,9 +102,9 @@ const Home = () => {
       </section>
 
       {/* Enhanced CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-indigo-500 to-violet-400 dark:bg-gray-950">
+      <section className="bg-white dark:bg-gray-950">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-          <div className="relative isolate overflow-hidden rounded-3xl  px-6 py-16 shadow-xl sm:px-16 text-center">
+          <div className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-400 px-6 py-16 shadow-xl text-center">
             {/* Gradient Circle Glow */}
             <div className="absolute inset-0 -z-10 blur-3xl opacity-20">
               <svg viewBox="0 0 1024 1024" className="absolute size-[512px] -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
