@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Hero from "@/components/Hero";
 import { Link } from "react-router-dom";
+import { ArrowRightIcon } from "lucide-react";
 
 const Home = () => {
   return (
@@ -20,6 +21,7 @@ const Home = () => {
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
+            {/* Feature Cards */}
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,52 +82,75 @@ const Home = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
-            <div className="text-center md:w-1/3">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl font-bold text-primary">1</span>
+            {["Select Your Options", "Generate Content", "Copy and Share"].map((title, i) => (
+              <div key={i} className="text-center md:w-1/3">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <span className="text-2xl font-bold text-primary">{i + 1}</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{title}</h3>
+                <p className="text-gray-600">
+                  {i === 0
+                    ? "Choose your topic, length, tone, and other preferences for your LinkedIn post."
+                    : i === 1
+                    ? "Our AI instantly creates a tailored post that matches your specifications."
+                    : "Copy your post with one click and share it directly to LinkedIn."}
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Select Your Options</h3>
-              <p className="text-gray-600">
-                Choose your topic, length, tone, and other preferences for your LinkedIn post.
-              </p>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="hidden md:block">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+      {/* Enhanced CTA Section */}
+      <section className="bg-white dark:bg-gray-950">
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-400 px-6 py-16 shadow-xl sm:px-16 text-center">
+            {/* Gradient Circle Glow */}
+            <div className="absolute inset-0 -z-10 blur-3xl opacity-20">
+              <svg viewBox="0 0 1024 1024" className="absolute size-[512px] -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
+                <circle cx="512" cy="512" r="512" fill="url(#cta-gradient)" />
+                <defs>
+                  <radialGradient id="cta-gradient">
+                    <stop stopColor="#3b82f6" />
+                    <stop offset="1" stopColor="#60a5fa" />
+                  </radialGradient>
+                </defs>
               </svg>
             </div>
 
-            <div className="text-center md:w-1/3">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl font-bold text-primary">2</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Generate Content</h3>
-              <p className="text-gray-600">
-                Our AI instantly creates a tailored post that matches your specifications.
+            {/* Text Section */}
+            <div className="mx-auto max-w-2xl">
+              <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                Ready to Enhance LinkedIn Presence?
+              </h2>
+              <p className="mt-4 text-lg text-gray-200 text-pretty text-center">
+                Join thousands of professionals who are using our platform to create engaging LinkedIn content.
               </p>
-            </div>
-
-            <div className="hidden md:block">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </div>
-
-            <div className="text-center md:w-1/3">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl font-bold text-primary">3</span>
+              <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                <Button
+                  size="lg"
+                  className="text-base font-semibold shadow-lg hover:scale-105 transition-transform"
+                  asChild
+                >
+                  <a href="https://inpostgen.netlify.app/generate" target="_blank" rel="noopener noreferrer">
+                    Get Started
+                    <ArrowRightIcon className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-white hover:text-white/80 text-base"
+                >
+                  <a href="#features">Learn More</a>
+                </Button>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Copy and Share</h3>
-              <p className="text-gray-600">
-                Copy your post with one click and share it directly to LinkedIn.
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Original CTA Section */}
       <section className="py-16 bg-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl mb-6">
