@@ -102,7 +102,7 @@ const Home = () => {
       </section>
 
       {/* Enhanced CTA Section */}
-      <section className="bg-white min-h-screen dark:bg-gray-950">
+      <section className="bg-white w-screen dark:bg-gray-950">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-400 px-6 py-16 shadow-xl text-center">
             {/* Gradient Circle Glow */}
