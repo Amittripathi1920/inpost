@@ -14,7 +14,6 @@ import { toast } from "@/components/ui/use-toast";
 import OnboardingModal from "@/components/OnboardingModal";
 import FeedbackModal from "@/pages/FeedbackPage";
 import { ThumbsUp, Search } from "lucide-react";
-import { RiAiGenerate } from "react-icons/ri";
 import { 
   getOptions, 
   saveGeneratedPost, 
@@ -24,6 +23,8 @@ import {
 } from "@/utils/edgeFunctions";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
+// Import your AI icon
+import aiIcon from "@/assets/ai.png";
 
 const PostGenerator = () => {
   const { user } = useAuth();
@@ -469,7 +470,11 @@ const PostGenerator = () => {
                   </>
                 ) : (
                   <>
-                    <RiAiGenerate className="mr-2 h-4 w-4" />
+                    <img 
+                      src={aiIcon} 
+                      alt="AI" 
+                      className="h-5 w-5 filter brightness-0 invert" 
+                    />
                     Generate Post
                   </>
                 )}
