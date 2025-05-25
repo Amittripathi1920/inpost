@@ -7,7 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
 
 interface FilterPanelProps {
   dateRange: DateRange | undefined;
@@ -25,6 +33,7 @@ interface FilterPanelProps {
   toneOptions: string[];
   languageOptions: string[];
   className?: string;
+  onDateRangeComplete?: () => void;
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -38,18 +47,80 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   toneOptions,
   languageOptions,
   className,
+  onDateRangeComplete,
 }: FilterPanelProps) => {
+  
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    
+    // Check if both start and end dates are selected
+    if (range?.from && range?.to) {
+      // Call the callback to close the filter panel
+      onDateRangeComplete?.();
+    }
+  };
+
+  const clearDateRange = () => {
+    setDateRange(undefined);
+  };
+
+  const formatDateRange = () => {
+    if (!dateRange?.from) {
+      return "Select date range";
+    }
+    
+    if (dateRange.from && !dateRange.to) {
+      return format(dateRange.from, "MMM dd, yyyy");
+    }
+    
+    if (dateRange.from && dateRange.to) {
+      return `${format(dateRange.from, "MMM dd, yyyy")} - ${format(dateRange.to, "MMM dd, yyyy")}`;
+    }
+    
+    return "Select date range";
+  };
+
   return (
-    <div className={cn("flex flex-col sm:flex-row gap-2 overflow-x-auto", className)}>
+    <div className={cn("sm:flex-row gap-2 overflow-x-auto", className)}>
+      {/* Date Range Selection - Commented Out */}
+      {/* 
       <div>
         <h4 className="text-sm font-medium mb-1">Date Range</h4>
-        <Calendar
-          mode="range"
-          selected={dateRange}
-          onSelect={setDateRange}
-          className="border rounded-md p-2"
-        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !dateRange && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {formatDateRange()}
+              {dateRange && (
+                <X 
+                  className="ml-auto h-4 w-4 hover:bg-gray-200 rounded" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearDateRange();
+                  }}
+                />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={handleDateRangeSelect}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+      */}
       
       <div>
         <h4 className="text-sm font-medium mb-1">Topic</h4>
