@@ -19,8 +19,6 @@ import { PostsByMonthChart } from "@/components/dashboard/PostsByMonth";
 import { ToneAnalysis } from "@/components/dashboard/ToneAnalysis";
 import { LanguageAnalysis } from "@/components/dashboard/LanguageAnalysis";
 import { HashtagAnalysis } from "@/components/dashboard/HashtagAnalysis";
-import { TopicTrendsChart } from "@/components/dashboard/TopicTrendsChart";
-import { EngagementPredictionChart } from "@/components/dashboard/EngagementPredictionChart";
 import { ActivityHeatmapChart } from "@/components/dashboard/ActivityHeatmapChart";
 import { RecentPosts } from "@/components/dashboard/RecentPosts";
 import { PostsTable } from "@/components/dashboard/PostsTable";
@@ -47,15 +45,11 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
 
 // Import icons
 import {
-  Home,
-  BarChart2,
-  TrendingUp,
   FileText,
   Download,
   Settings,
@@ -64,8 +58,6 @@ import {
   X,
   RefreshCw,
   Palette,
-  Plus,
-  Calendar,
   ChevronLeft
 } from "lucide-react";
 
@@ -159,6 +151,127 @@ const UserDashboard = () => {
     if (saved) setThemeColor(saved);
   }, []);
 
+  // Apply filters to posts
+  const applyFilters = (postsToFilter = posts) => {
+    let filtered = postsToFilter.filter(post => {
+      const topicMatch = filters.topic === "all" || post.topic?.topic_name === filters.topic;
+      const lengthMatch = filters.length === "all" || post.length?.length_type === filters.length;
+      const toneMatch = filters.tone === "all" || post.tone?.tone_name === filters.tone;
+      const languageMatch = filters.language === "all" || post.language?.language_name === filters.language;
+      
+      return topicMatch && lengthMatch && toneMatch && languageMatch;
+    });
+    
+    // Apply search query if present
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(post => 
+        post.generated_post.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (post.topic?.topic_name && post.topic.topic_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (post.tone?.tone_name && post.tone.tone_name.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+    
+    setFilteredPosts(filtered);
+    
+    // Update analytics based on filtered posts
+    updateAnalytics(filtered);
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilters({
+      topic: "all",
+      length: "all",
+      tone: "all",
+      language: "all",
+    });
+    setDateRange(undefined);
+    setSearchQuery("");
+    
+    // Re-apply filters (which will now show all posts)
+    applyFilters();
+  };
+
+  // Update analytics based on filtered posts
+  const updateAnalytics = (filteredPosts: Post[]) => {
+    // Topic counts
+    const topicMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const topic = post.topic?.topic_name || "Unknown";
+      topicMap[topic] = (topicMap[topic] || 0) + 1;
+    });
+    const topicArray = Object.entries(topicMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+    setTopicCounts(topicArray);
+
+    // Length categories
+    const lengthMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const lengthType = post.length?.length_type || "Unknown";
+      lengthMap[lengthType] = (lengthMap[lengthType] || 0) + 1;
+    });
+    const lengthArray = Object.entries(lengthMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => {
+        const order = ["Short", "Medium", "Long"];
+        return order.indexOf(a.name) - order.indexOf(b.name);
+      });
+    setLengthData(lengthArray);
+
+    // Posts by month
+    const monthMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const date = new Date(post.created_at);
+      const monthName = date.toLocaleString("default", { month: "long" });
+      monthMap[monthName] = (monthMap[monthName] || 0) + 1;
+    });
+    const monthArray = Object.entries(monthMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => {
+        const months = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+        return months.indexOf(a.name) - months.indexOf(b.name);
+      });
+    setPostsByMonth(monthArray);
+
+    // Tone analysis
+    const toneMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const tone = post.tone?.tone_name || "Unknown";
+      toneMap[tone] = (toneMap[tone] || 0) + 1;
+    });
+    const toneArray = Object.entries(toneMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+    setToneData(toneArray);
+
+    // Language analysis
+    const languageMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const language = post.language?.language_name || "Unknown";
+      languageMap[language] = (languageMap[language] || 0) + 1;
+    });
+    const languageArray = Object.entries(languageMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+    setLanguageData(languageArray);
+
+    // Hashtag analysis
+    const hashtagMap: Record<string, number> = {};
+    filteredPosts.forEach((post) => {
+      const hashtags = extractHashtags(post.generated_post);
+      hashtags.forEach(tag => {
+        hashtagMap[tag] = (hashtagMap[tag] || 0) + 1;
+      });
+    });
+    const hashtagArray = Object.entries(hashtagMap)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10 hashtags
+    setHashtagData(hashtagArray);
+  };
+
   // Load posts data
   useEffect(() => {
     const loadPosts = async () => {
@@ -243,127 +356,6 @@ const UserDashboard = () => {
 
     loadPosts();
   }, [user, toast, dateRange]);
-
-  // Apply filters to posts
-  const applyFilters = (postsToFilter = posts) => {
-    let filtered = postsToFilter.filter(post => {
-      const topicMatch = filters.topic === "all" || post.topic?.topic_name === filters.topic;
-      const lengthMatch = filters.length === "all" || post.length?.length_type === filters.length;
-      const toneMatch = filters.tone === "all" || post.tone?.tone_name === filters.tone;
-      const languageMatch = filters.language === "all" || post.language?.language_name === filters.language;
-      
-      return topicMatch && lengthMatch && toneMatch && languageMatch;
-    });
-    
-    // Apply search query if present
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(post => 
-        post.generated_post.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (post.topic?.topic_name && post.topic.topic_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (post.tone?.tone_name && post.tone.tone_name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-    
-    setFilteredPosts(filtered);
-    
-    // Update analytics based on filtered posts
-    updateAnalytics(filtered);
-  };
-
-  // Reset all filters
-  const resetFilters = () => {
-    setFilters({
-      topic: "all",
-      length: "all",
-      tone: "all",
-      language: "all",
-    });
-    setDateRange(undefined);
-    setSearchQuery("");
-    
-    // Re-apply filters (which will now show all posts)
-    applyFilters();
-  };
-
-  // Update analytics based on filtered posts
-  const updateAnalytics = (filteredPosts: Post[]) => {
-    // Topic counts
-    const topicMap: Record<string, number> = {};
-    filteredPosts.forEach((post) => {
-      const topic = post.topic?.topic_name || "Unknown";
-      topicMap[topic] = (topicMap[topic] || 0) + 1;
-    });
-    const topicArray = Object.entries(topicMap)
-      .map(([name, count], index) => ({ name, count, id: `topic-${index}` }))
-      .sort((a, b) => b.count - a.count);
-    setTopicCounts(topicArray);
-
-    // Length categories
-    const lengthMap: Record<string, number> = {};
-    filteredPosts.forEach((post) => {
-      const lengthType = post.length?.length_type || "Unknown";
-      lengthMap[lengthType] = (lengthMap[lengthType] || 0) + 1;
-    });
-    const lengthArray = Object.entries(lengthMap)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => {
-        const order = ["Short", "Medium", "Long"];
-        return order.indexOf(a.name) - order.indexOf(b.name);
-      });
-    setLengthData(lengthArray);
-
-    // Posts by month
-    const monthMap: Record<string, number> = {};
-    filteredPosts.forEach((post) => {
-      const date = new Date(post.created_at);
-      const monthName = date.toLocaleString("default", { month: "long" });
-      monthMap[monthName] = (monthMap[monthName] || 0) + 1;
-    });
-    const monthArray = Object.entries(monthMap)
-      .map(([name, count], index) => ({ name, count, id: `month-${index}` }))
-      .sort((a, b) => {
-        const months = ["January", "February", "March", "April", "May", "June", 
-                        "July", "August", "September", "October", "November", "December"];
-        return months.indexOf(a.name) - months.indexOf(b.name);
-      });
-    setPostsByMonth(monthArray);
-
-    // Tone analysis
-    const toneMap: Record<string, number> = {};
-    filteredPosts.forEach((post) => {
-      const tone = post.tone?.tone_name || "Unknown";
-      toneMap[tone] = (toneMap[tone] || 0) + 1;
-    });
-    const toneArray = Object.entries(toneMap)
-      .map(([name, count], index) => ({ name, count, id: `tone-${index}` }))
-      .sort((a, b) => b.count - a.count);
-    setToneData(toneArray);
-
-    // Language analysis
-    const languageMap: Record<string, number> = {};
-    filteredPosts.forEach((post) => {
-      const language = post.language?.language_name || "Unknown";
-      languageMap[language] = (languageMap[language] || 0) + 1;
-    });
-    const languageArray = Object.entries(languageMap)
-      .map(([name, count], index) => ({ name, count, id: `lang-${index}` }))
-      .sort((a, b) => b.count - a.count);
-    setLanguageData(languageArray);
-
-    // Hashtag analysis
-    const hashtagMap: Record<string, number> = {};
-    filteredPosts.forEach((post) => {
-      const hashtags = extractHashtags(post.generated_post);
-      hashtags.forEach(tag => {
-        hashtagMap[tag] = (hashtagMap[tag] || 0) + 1;
-      });
-    });
-    const hashtagArray = Object.entries(hashtagMap)
-      .map(([tag, count], index) => ({ tag, count, id: `tag-${index}` }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10); // Top 10 hashtags
-    setHashtagData(hashtagArray);
-  };
 
   // Effect to apply filters when they change
   useEffect(() => {
@@ -558,304 +550,6 @@ const UserDashboard = () => {
               </DropdownMenu>
             </div>
           </div>
-          
-          {/* Tab Navigation */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="trends">Trends</TabsTrigger>
-              <TabsTrigger value="posts">Posts</TabsTrigger>
-            </TabsList>
-            
-            {/* Tab Content */}
-            <TabsContent value="overview" className="mt-0">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <DashboardSummary
-                  totalPosts={filteredPosts.length}
-                  topicsCount={topicCounts.length}
-                  mostCommonTopic={topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
-                  className="md:col-span-2 lg:col-span-3"
-                />
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Topic Distribution</CardTitle>
-                    <CardDescription>Most frequently used topics</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <TopicDistribution 
-                      topicCounts={topicCounts} 
-                      themeColor={themeColor} 
-                      rgbToHsl={rgbToHsl} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Post Length</CardTitle>
-                    <CardDescription>Distribution by word count</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <PostLengthDistribution 
-                      lengthData={lengthData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Monthly Activity</CardTitle>
-                    <CardDescription>Posts created per month</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <PostsByMonthChart 
-                      postsByMonth={postsByMonth} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Tone Analysis</CardTitle>
-                    <CardDescription>Post tone distribution</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ToneAnalysis 
-                      toneData={toneData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Language Analysis</CardTitle>
-                    <CardDescription>Post language distribution</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <LanguageAnalysis 
-                      languageData={languageData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Hashtag Analysis</CardTitle>
-                    <CardDescription>Top hashtags</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <HashtagAnalysis 
-                      hashtagData={hashtagData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Topic Trends</CardTitle>
-                    <CardDescription>Topic trends over time</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <TopicTrendsChart 
-                      topicCounts={topicCounts} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Engagement Prediction</CardTitle>
-                    <CardDescription>Engagement prediction</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <EngagementPredictionChart 
-                      topicCounts={topicCounts} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Activity Heatmap</CardTitle>
-                    <CardDescription>Activity heatmap</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ActivityHeatmapChart 
-                      topicCounts={topicCounts} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-
-                <Card className="md:col-span-2 lg:col-span-3">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Recent Posts</CardTitle>
-
-                    <CardDescription>Your latest generated content</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RecentPosts 
-                      posts={filteredPosts.slice(0, 5)}
-                      expandedPosts={expandedPosts}
-                      toggleExpandPost={toggleExpandPost}
-                      copyToClipboard={copyToClipboard}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="content" className="mt-0">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Topic Distribution</CardTitle>
-                    <CardDescription>Most frequently used topics</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <TopicDistribution 
-                      topicCounts={topicCounts} 
-                      themeColor={themeColor} 
-                      rgbToHsl={rgbToHsl} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Post Length</CardTitle>
-                    <CardDescription>Distribution by word count</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <PostLengthDistribution 
-                      lengthData={lengthData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Tone Analysis</CardTitle>
-                    <CardDescription>Most used tones in your content</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ToneAnalysis 
-                      toneData={toneData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Language Usage</CardTitle>
-                    <CardDescription>Languages used in your posts</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <LanguageAnalysis 
-                      languageData={languageData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card className="md:col-span-2 lg:col-span-3">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Hashtag Analysis</CardTitle>
-                    <CardDescription>Most frequently used hashtags</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <HashtagAnalysis 
-                      hashtagData={hashtagData} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="trends" className="mt-0">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Monthly Activity</CardTitle>
-                    <CardDescription>Your post generation over time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <PostsByMonthChart 
-                      postsByMonth={postsByMonth} 
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Activity Heatmap</CardTitle>
-                    <CardDescription>Your posting frequency by day and time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ActivityHeatmapChart 
-                      data={[]} // We'll use the sample data in the component for now
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Engagement Prediction</CardTitle>
-                    <CardDescription>Estimated engagement based on post attributes</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <EngagementPredictionChart 
-                      data={[]} // We'll use the sample data in the component for now
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Topic Trends</CardTitle>
-                    <CardDescription>How your topic choices have evolved over time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <TopicTrendsChart 
-                      data={[]} // We'll need to prepare this data
-                      themeColor={themeColor} 
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="posts" className="mt-0">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">All Posts</CardTitle>
-                  <CardDescription>Complete list of your generated content</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PostsTable 
-                    posts={filteredPosts}
-                    copyToClipboard={copyToClipboard}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
       
@@ -982,47 +676,157 @@ const UserDashboard = () => {
           </p>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - Only Overview and Posts */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="posts">All Posts</TabsTrigger>
           </TabsList>
           
-          {/* Overview Tab */}
+          {/* Overview Tab - All Charts and Visualizations */}
           <TabsContent value="overview" className="mt-0">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-6">
+              {/* Dashboard Summary - Full Width */}
               <DashboardSummary
                 totalPosts={filteredPosts.length}
                 topicsCount={topicCounts.length}
                 mostCommonTopic={topicCounts.length > 0 ? topicCounts[0].name : "N/A"}
-                className="md:col-span-2 lg:col-span-3"
+                className="w-full"
               />
               
-              {/* Rest of overview content... */}
+              {/* Charts Grid */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {/* Topic Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Topic Distribution</CardTitle>
+                    <CardDescription>Most frequently used topics</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <TopicDistribution 
+                      topicCounts={topicCounts} 
+                      themeColor={themeColor} 
+                      rgbToHsl={rgbToHsl} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                {/* Post Length Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Post Length</CardTitle>
+                    <CardDescription>Distribution by word count</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <PostLengthDistribution 
+                      lengthData={lengthData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                {/* Monthly Activity */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Monthly Activity</CardTitle>
+                    <CardDescription>Posts created per month</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <PostsByMonthChart 
+                      postsByMonth={postsByMonth} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                {/* Tone Analysis */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Tone Analysis</CardTitle>
+                    <CardDescription>Post tone distribution</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ToneAnalysis 
+                      toneData={toneData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                {/* Language Analysis */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Language Analysis</CardTitle>
+                    <CardDescription>Post language distribution</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <LanguageAnalysis 
+                      languageData={languageData} 
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+                
+                {/* Activity Heatmap */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Activity Heatmap</CardTitle>
+                    <CardDescription>Your posting frequency by day and time</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ActivityHeatmapChart 
+                      posts={filteredPosts}
+                      themeColor={themeColor} 
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Hashtag Analysis - Full Width */}
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Hashtag Analysis</CardTitle>
+                  <CardDescription>Most frequently used hashtags</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HashtagAnalysis 
+                    hashtagData={hashtagData} 
+                    themeColor={themeColor} 
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Recent Posts - Full Width */}
+              {/* <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Recent Posts</CardTitle>
+                  <CardDescription>Your latest generated content</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentPosts 
+                    posts={filteredPosts.slice(0, 5)}
+                    expandedPosts={expandedPosts}
+                    toggleExpandPost={toggleExpandPost}
+                    copyToClipboard={copyToClipboard}
+                  />
+                </CardContent>
+              </Card> */}
             </div>
           </TabsContent>
 
-          {/* Content Tab */}
-          <TabsContent value="content" className="mt-0">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Content analysis components... */}
-            </div>
-          </TabsContent>
-
-          {/* Trends Tab */}
-          <TabsContent value="trends" className="mt-0">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Trends components... */}
-            </div>
-          </TabsContent>
-
-          {/* Posts Tab */}
+          {/* Posts Tab - Complete Posts Table */}
           <TabsContent value="posts" className="mt-0">
             <Card>
-              {/* Posts table... */}
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">All Posts</CardTitle>
+                <CardDescription>Complete list of your generated content</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PostsTable 
+                  posts={filteredPosts}
+                  copyToClipboard={copyToClipboard}
+                />
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
@@ -1124,7 +928,6 @@ const UserDashboard = () => {
       )}
     </div>
   );
-
 };
 
 export default UserDashboard;

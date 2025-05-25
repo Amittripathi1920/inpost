@@ -56,6 +56,7 @@ export function HashtagAnalysis({
               dataKey="count" 
               name="Occurrences" 
               radius={[4, 4, 0, 0]}
+              maxBarSize={40}
               // Remove animation property or set it correctly
               animationDuration={500}
             >

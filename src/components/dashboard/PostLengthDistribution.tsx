@@ -71,6 +71,7 @@ export function PostLengthDistribution({
               name="Posts" 
               radius={[4, 4, 0, 0]}
               animationDuration={500}
+              maxBarSize={60}
             >
               {lengthData.map((entry, index) => (
                 <Cell key={`cell-${entry.id || index}`} fill={colors[index % colors.length]} />
