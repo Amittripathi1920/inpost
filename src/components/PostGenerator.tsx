@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/use-toast";
 import OnboardingModal from "@/components/OnboardingModal";
 import FeedbackModal from "@/pages/FeedbackPage";
 import { ThumbsUp, Search } from "lucide-react";
+import { RiAiGenerate } from "react-icons/ri";
 import { 
   getOptions, 
   saveGeneratedPost, 
@@ -446,9 +447,18 @@ const PostGenerator = () => {
             </div>
 
             {/* Buttons section with Generate and Reset */}
-            <div className="flex gap-2 mt-4 sm:mt-6">
+            <div className="flex justify-end space-x-3 pt-2">
               <Button
-                className="flex-1"
+                variant="outline"
+                onClick={handleReset}
+                className="w-auto"
+                disabled={isGenerating}
+              >
+                Reset
+              </Button>
+
+              <Button
+                className="flex items-center"
                 onClick={handleGeneratePost}
                 disabled={!formData.topic.trim() || isGenerating}
               >
@@ -458,17 +468,11 @@ const PostGenerator = () => {
                     Generating...
                   </>
                 ) : (
-                  "Generate Post"
+                  <>
+                    <RiAiGenerate className="mr-2 h-4 w-4" />
+                    Generate Post
+                  </>
                 )}
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                className="w-auto"
-                disabled={isGenerating}
-              >
-                Reset
               </Button>
             </div>
           </div>
