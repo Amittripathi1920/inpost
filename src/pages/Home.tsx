@@ -132,7 +132,7 @@ const Home = () => {
                   className="text-base font-semibold shadow-lg hover:scale-105 transition-transform"
                   asChild
                 >
-                  <a href="https://inpostgen.netlify.app/generate" target="_blank" rel="noopener noreferrer">
+                  <a href="https://linked-in-post-generator.netlify.app/generate" target="_blank" rel="noopener noreferrer">
                     Get Started
                     <ArrowRightIcon className="ml-2 h-4 w-4" />
                   </a>
