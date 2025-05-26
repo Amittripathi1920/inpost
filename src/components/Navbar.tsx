@@ -29,7 +29,7 @@ const Navbar = ({
               <img
                 src={logoWhite}
                 alt="EchoPost Logo"
-                className="h-8 w-auto"
+                className="h-8 w-auto filter brightness-0 invert"
               />
             </Link>
             <NavLinks
