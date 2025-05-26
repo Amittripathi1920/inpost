@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import HeroGif from "@/assets/8596248.jpg"; // adjust path if needed
+import HeroGif from "@/assets/Chat bot.gif"; // adjust path if needed
 
 const Hero = () => {
   const navigate = useNavigate();
