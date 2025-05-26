@@ -79,7 +79,7 @@ const Hero = () => {
             <img
               src={HeroGif}
               alt="LinkedIn Post Generator Animation"
-              className="w-full max-w-md mx-auto rounded-2xl shadow-xl"
+              className="w-full max-w-md mx-auto rounded-2xl"
             />
           </div>
         </div>
