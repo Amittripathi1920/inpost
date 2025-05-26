@@ -434,6 +434,8 @@ const UserDashboard = () => {
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
+            <h1 className="text-xl font-bold">Hi, Welcome to Your Dashboard</h1>
+            
             <div className="flex items-center space-x-2">
               {/* Search - Hidden on mobile, shown on larger screens */}
               <div className="relative hidden md:block">
