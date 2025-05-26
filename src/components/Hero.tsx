@@ -75,7 +75,7 @@ const Hero = () => {
           </div>
 
           {/* Right-side GIF Image */}
-          <div className="animate-fade-in">
+          <div className="p-1">
             <img
               src={HeroGif}
               alt="LinkedIn Post Generator Animation"
