@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import NavbarDesktop from "./nav/NavbarDesktop";
 import NavbarMobile from "./nav/NavbarMobile";
 import NavLinks from "./nav/NavLinks";
-import logoWhite from "@/assets/logo_white.png"; // Adjust path if needed
-
+import logoWhite from "@/assets/logo_white.png";
 
 type NavbarProps = {
   isAuthenticated: boolean;
@@ -23,34 +22,39 @@ const Navbar = ({
   return (
     <nav className="bg-white border-b border-gray-200 fixed w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center">
+        <div className="flex justify-between items-center h-16">
+          {/* Left: Logo only */}
+          <div className="flex-shrink-0">
+            <Link to="/" className="flex items-center">
               <img
                 src={logoWhite}
                 alt="EchoPost Logo"
                 className="h-16 w-auto invert"
               />
             </Link>
+          </div>
+
+          {/* Right: NavLinks + Profile */}
+          <div className="flex items-center space-x-6">
             <NavLinks
               isAuthenticated={isAuthenticated}
-              className="hidden md:ml-6 md:flex md:space-x-8"
+              className="hidden md:flex space-x-8"
+            />
+            <NavbarDesktop
+              isAuthenticated={isAuthenticated}
+              onLogin={onLogin}
+              onLogout={onLogout}
+              userName={userName}
+              profileImage={profileImage}
+            />
+            <NavbarMobile
+              isAuthenticated={isAuthenticated}
+              onLogin={onLogin}
+              onLogout={onLogout}
+              userName={userName}
+              profileImage={profileImage}
             />
           </div>
-          <NavbarDesktop
-            isAuthenticated={isAuthenticated}
-            onLogin={onLogin}
-            onLogout={onLogout}
-            userName={userName}
-            profileImage={profileImage}
-          />
-          <NavbarMobile
-            isAuthenticated={isAuthenticated}
-            onLogin={onLogin}
-            onLogout={onLogout}
-            userName={userName}
-            profileImage={profileImage}
-          />
         </div>
       </div>
     </nav>
