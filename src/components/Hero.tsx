@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import HeroGif from "@/assets/hero_image.gif";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ const Hero = () => {
           
           <div className="relative animate-fade-in flex justify-center items-center">
             <img 
-              src="/assets/your-gif-file.gif" // Update this path to your actual GIF file
+              src= {HeroGif} // Update this path to your actual GIF file
               alt="LinkedIn post generation demo"
               className="rounded-lg shadow-xl max-w-full h-auto"
             />
