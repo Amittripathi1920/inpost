@@ -667,14 +667,14 @@ const UserDashboard = () => {
       {/* Main Content Area */}
       <div className="container mx-auto px-4 py-6">
         {/* Results Count */}
-        <div className="mb-4">
+{/*         <div className="mb-4">
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium">{filteredPosts.length}</span> of <span className="font-medium">{posts.length}</span> posts
             {searchQuery && (
               <> matching "<span className="font-medium">{searchQuery}</span>"</>
             )}
           </p>
-        </div>
+        </div> */}
 
         {/* Tab Content - Only Overview and Posts */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
