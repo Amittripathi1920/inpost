@@ -39,7 +39,7 @@ const Navbar = ({
                 />
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
               </svg>
-              <span className="ml-2 text-xl font-bold text-gray-800">LinkedPost</span>
+              <span className="ml-2 text-xl font-bold text-gray-800">EchoPost</span>
             </Link>
             <NavLinks isAuthenticated={isAuthenticated} className="hidden md:ml-6 md:flex md:space-x-8" />
           </div>
