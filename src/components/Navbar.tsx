@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import NavbarDesktop from "./nav/NavbarDesktop";
 import NavbarMobile from "./nav/NavbarMobile";
 import NavLinks from "./nav/NavLinks";
+import logoWhite from "@/assets/logo_white.png"; // Adjust path if needed
+
 
 type NavbarProps = {
   isAuthenticated: boolean;
@@ -24,24 +26,16 @@ const Navbar = ({
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <svg
-                className="h-8 w-auto text-primary"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M7 17L17 7M17 7H8M17 7V16"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-              </svg>
-              <span className="ml-2 text-xl font-bold text-gray-800">EchoPost</span>
+              <img
+                src={logoWhite}
+                alt="EchoPost Logo"
+                className="h-8 w-auto"
+              />
             </Link>
-            <NavLinks isAuthenticated={isAuthenticated} className="hidden md:ml-6 md:flex md:space-x-8" />
+            <NavLinks
+              isAuthenticated={isAuthenticated}
+              className="hidden md:ml-6 md:flex md:space-x-8"
+            />
           </div>
           <NavbarDesktop
             isAuthenticated={isAuthenticated}
