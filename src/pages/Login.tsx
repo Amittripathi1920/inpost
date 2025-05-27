@@ -218,7 +218,7 @@ const Login = () => {
                     Login with Google
                   </Button> */}
                   
-                  <div className="text-center">
+{/*                   <div className="text-center">
                     <button 
                       type="button"
                       onClick={handleResendConfirmation}
@@ -226,7 +226,7 @@ const Login = () => {
                     >
                       Didn't receive confirmation email? Resend
                     </button>
-                  </div>
+                  </div> */}
                   
                   <div className="mt-2 text-center text-sm">
                     Don't have an account?{" "}
@@ -305,7 +305,7 @@ const Login = () => {
                     {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                   
-                  <div className="text-center">
+{/*                   <div className="text-center">
                     <button 
                       type="button"
                       onClick={handleResendConfirmation}
@@ -313,7 +313,7 @@ const Login = () => {
                     >
                       Didn't receive confirmation email? Resend
                     </button>
-                  </div>
+                  </div> */}
                   
                   <div className="mt-2 text-center text-sm">
                     Already have an account?{" "}
