@@ -208,7 +208,7 @@ const Login = () => {
                     {isLoading ? "Logging in..." : "Login"}
                   </Button>
                   
-                  <Button 
+{/*                   <Button 
                     variant="outline" 
                     className="w-full" 
                     onClick={handleGoogleLogin}
@@ -216,7 +216,7 @@ const Login = () => {
                     type="button"
                   >
                     Login with Google
-                  </Button>
+                  </Button> */}
                   
                   <div className="text-center">
                     <button 
