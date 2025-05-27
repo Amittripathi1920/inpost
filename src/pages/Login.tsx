@@ -204,7 +204,7 @@ const Login = () => {
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full bg-primary" disabled={isLoading}>
                     {isLoading ? "Logging in..." : "Login"}
                   </Button>
                   
