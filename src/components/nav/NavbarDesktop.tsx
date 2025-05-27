@@ -23,7 +23,8 @@ const NavbarDesktop = ({
       ) : (
         <div className="flex space-x-4">
           <Button variant="outline" onClick={onLogin}>Login</Button>
-          <Button onClick={onLogin}>Sign Up</Button>
+          <Button onClick={onLogin} className="bg-gray-900 hover:bg-gray-800 text-white">Sign Up</Button>
+
         </div>
       )}
     </div>
