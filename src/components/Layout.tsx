@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "./Navbar";
-import { logVisitor } from "@/lib/edgefunctions"; // ✅ Import the logging function
+import { logVisitor } from "@/utils/edgeFunctions"; // ✅ Import the logging function
 
 const Layout = () => {
   const { isAuthenticated, logout, user } = useAuth(); // Destructuring user from useAuth
