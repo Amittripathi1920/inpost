@@ -19,17 +19,17 @@ export async function getOptions(category: string, userId?: string): Promise<any
   return data;
 }
 
-export const logVisitor = async (path: string) => {
+export const logVisitor = async (path: string, visitorId: string) => {
   try {
-    const { error } = await supabase.functions.invoke("log_visitor", {
-      body: { path },
+    const res = await supabase.functions.invoke('log_visitor', {
+      body: { path, visitor_id: visitorId },
     });
 
-    if (error) {
-      throw new Error(error.message);
+    if (res.error) {
+      throw new Error(res.error.message);
     }
   } catch (error) {
-    console.error("Failed to log visitor:", error);
+    console.error('Failed to log visitor:', error);
   }
 };
 
