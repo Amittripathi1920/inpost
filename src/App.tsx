@@ -15,6 +15,7 @@ import Login from "@/pages/Login";
 import GeneratePost from "@/pages/GeneratePost";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
+import PrivacyPolicy from "@/pages/PrivacyPolicy"; // ✅ NEW
 
 
 const queryClient = new QueryClient();
