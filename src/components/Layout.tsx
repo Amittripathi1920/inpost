@@ -1,9 +1,32 @@
-import { useNavigate, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "./Navbar";
 
+const VisitorLogger = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const logVisitor = async () => {
+      try {
+        await fetch("https://YOUR_PROJECT_ID.functions.supabase.co/log_visitor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: location.pathname })
+        });
+      } catch (err) {
+        console.warn("Failed to log visitor:", err);
+      }
+    };
+
+    logVisitor();
+  }, [location.pathname]);
+
+  return null;
+};
+
 const Layout = () => {
-  const { isAuthenticated, logout, user } = useAuth(); // Destructuring user from useAuth
+  const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = () => {
@@ -17,12 +40,13 @@ const Layout = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <VisitorLogger />
       <Navbar
         isAuthenticated={isAuthenticated}
         onLogin={handleLogin}
         onLogout={handleLogout}
-        userName={user?.full_name} // Assuming full_name is the user's name
-        profileImage={user?.profile_image} // Assuming profile_image is the profile image URL
+        userName={user?.full_name}
+        profileImage={user?.profile_image}
       />
       <main className="flex-grow pt-16">
         <Outlet />
