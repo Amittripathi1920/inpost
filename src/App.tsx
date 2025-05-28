@@ -81,6 +81,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="privacy-policy" element={<PrivacyPolicy />} /> {/* ✅ NEW */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
