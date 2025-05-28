@@ -19,25 +19,28 @@
     <script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"></script>
     <script>
       window.addEventListener("load", function () {
-        window.cookieconsent.initialise({
-          palette: {
-            popup: {
-              background: "#000",
+        if (window.cookieconsent) {
+          window.cookieconsent.initialise({
+            palette: {
+              popup: {
+                background: "#000"
+              },
+              button: {
+                background: "#f1d600"
+              }
             },
-            button: {
-              background: "#f1d600",
-            },
-          },
-          theme: "classic",
-          position: "bottom-right",
-          content: {
-            message:
-              "This site uses cookies to analyze traffic and enhance your experience.",
-            dismiss: "Got it!",
-            link: "Learn more",
-            href: "/privacy-policy", // Adjust path if needed
-          },
-        });
+            theme: "classic",
+            position: "bottom-right",
+            content: {
+              message: "This site uses cookies to analyze traffic and enhance your experience.",
+              dismiss: "Got it!",
+              link: "Learn more",
+              href: "/privacy-policy"
+            }
+          });
+        } else {
+          console.warn("Cookie Consent script blocked by browser or extension.");
+        }
       });
     </script>
   </head>
