@@ -1,26 +1,25 @@
 import { useEffect } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "./Navbar";
 import { logVisitor } from "@/utils/edgeFunctions"; // ✅ Import the logging function
 
 const Layout = () => {
-  const { isAuthenticated, logout, user } = useAuth(); // Destructuring user from useAuth
+  const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // 👈 get current route
 
-  const handleLogin = () => {
-    navigate("/login");
-  };
+  const handleLogin = () => navigate("/login");
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
-  // ✅ Log visitor when the layout mounts
+  // ✅ Log visitor on every route change
   useEffect(() => {
-    logVisitor(window.location.pathname);
-  }, []);
+    logVisitor(location.pathname);
+  }, [location.pathname]); // 👈 triggers on every route change
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -28,8 +27,8 @@ const Layout = () => {
         isAuthenticated={isAuthenticated}
         onLogin={handleLogin}
         onLogout={handleLogout}
-        userName={user?.full_name} // Assuming full_name is the user's name
-        profileImage={user?.profile_image} // Assuming profile_image is the profile image URL
+        userName={user?.full_name}
+        profileImage={user?.profile_image}
       />
       <main className="flex-grow pt-16">
         <Outlet />
