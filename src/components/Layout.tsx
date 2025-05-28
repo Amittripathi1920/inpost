@@ -1,25 +1,37 @@
-import { useEffect } from "react";
-import { useNavigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import Navbar from "./Navbar";
-import { logVisitor } from "@/utils/edgeFunctions"; // ✅ Import the logging function
+import { useEffect } from 'react';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import Navbar from './Navbar';
+import { logVisitor } from '@/utils/edgeFunctions';
+
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 const Layout = () => {
   const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // 👈 get current route
+  const location = useLocation();
 
-  const handleLogin = () => navigate("/login");
+  const handleLogin = () => navigate('/login');
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate('/');
   };
 
-  // ✅ Log visitor on every route change
   useEffect(() => {
-    logVisitor(location.pathname);
-  }, [location.pathname]); // 👈 triggers on every route change
+    let visitorId = localStorage.getItem('visitor_id');
+    if (!visitorId) {
+      visitorId = generateUUID();
+      localStorage.setItem('visitor_id', visitorId);
+    }
+    logVisitor(location.pathname, visitorId);
+  }, [location.pathname]);
 
   return (
     <div className="flex flex-col min-h-screen">
