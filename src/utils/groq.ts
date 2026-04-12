@@ -1,5 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabaseClient"; // Adjust the import path as needed
+import { supabase } from "@/lib/supabaseClient";
 
 type GeneratePostParams = {
   topic: string;
@@ -9,66 +9,122 @@ type GeneratePostParams = {
   experience: string;
   designation?: string;
   influencer?: string;
-  what_to_include?: string
+  hook?: string; // 🔥 NEW
+  what_to_include?: string;
 };
 
-// Keep this function for reference or if you need to use it elsewhere
-export const generateGroqPrompt = ({
+
+// 🔥 STEP 1: GENERATE HOOKS
+export const generateHooks = async ({
   topic,
-  length,
-  language,
-  tone,
-  experience,
-  influencer = "NA",
-  designation,
-  what_to_include = "Anything"
-}: GeneratePostParams) => {
-  return `Generate a LinkedIn post for a person using the following details and include ${what_to_include}. 
-  Do not include any preamble or title. 
-  Output only the post content with relevant hashtags at the end.
+  hookType
+}: {
+  topic: string;
+  hookType: string;
+}): Promise<string[]> => {
+  try {
+    const prompt = `
+Generate 3 high-performing LinkedIn hooks.
 
-1) Topic = ${topic}
-2) Length = ${length} (If long, include insights or story. If short, keep it concise and impactful.)
-3) Language = ${language} (If Hinglish, use a mix of Hindi and English.)
-4) Tone = ${tone}
-5) Experience Level = ${experience}
-6) Influencer = ${influencer} (If not NA, match tone and style like ${influencer} from LinkedIn.)
-7) Tweek the post for a user who is designated at ${designation} but do not use his designation name on the post.
-
+Topic: ${topic}
+Hook Style: ${hookType}
 
 Rules:
-- Use English script for both English and Hinglish.
-- Please Don't Use these common starting lines like - ( "as a seasoned" )
-- If influencer is NA, you can freely choose tone/style.
-- if what_to_include is "Anything", you can generate anything on topic - ${topic}
-- End with relevant and trending hashtags.
-- No preamble, no closing remarks — just the post.`;
+- Each hook max 12 words per line
+- Create curiosity or tension
+- Avoid generic phrases like "In today's world"
+- Make it specific and engaging
+
+Return only hooks as array.
+`;
+
+    const { data, error } = await supabase.functions.invoke("generate-post", {
+      body: { prompt }
+    });
+
+    if (error) throw error;
+
+    return data.hooks || [];
+  } catch (error) {
+    console.error(error);
+    return [
+      `I made a mistake while working on ${topic}…`,
+      `Most people get ${topic} completely wrong.`,
+      `This changed how I see ${topic} forever.`
+    ];
+  }
 };
 
+
+// 🔥 STEP 2–5: MAIN POST GENERATION (PIPELINE INSIDE PROMPT)
 export const generatePost = async (
   params: GeneratePostParams
 ): Promise<{ content: string; hashtags: string }> => {
   try {
-    // Call the Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('generate-post', {
-      body: params
+    const {
+      topic,
+      length,
+      language,
+      tone,
+      experience,
+      designation,
+      influencer = "NA",
+      hook,
+      what_to_include = "Anything"
+    } = params;
+
+    const prompt = `
+Write a highly engaging LinkedIn post.
+
+STRUCTURE:
+1. Start with this hook:
+"${hook}"
+
+2. Build context around the topic
+3. Provide 3–5 insights or lessons
+4. Add a relatable example or personal tone
+5. End with a strong takeaway
+6. Add a subtle call to action
+
+DETAILS:
+- Topic: ${topic}
+- Length: ${length}
+- Language: ${language}
+- Tone: ${tone}
+- Experience Level: ${experience}
+- Designation Context: ${designation}
+
+STRICT INSTRUCTIONS:
+- MUST include this: ${what_to_include}
+- Avoid generic phrases like "In today's fast-paced world"
+- Avoid robotic tone
+- Use short lines for readability
+- Make it sound human, not AI
+- Add personality and slight imperfection
+- Do NOT mention designation explicitly
+
+OUTPUT:
+- Only post content
+- Then hashtags at end
+`;
+
+    const { data, error } = await supabase.functions.invoke("generate-post", {
+      body: { prompt }
     });
-    
-    if (error) {
-      console.error("Supabase function error:", error);
-      throw error;
-    }
-    
+
+    if (error) throw error;
+
     return {
       content: data.content,
       hashtags: data.hashtags
     };
+
   } catch (error) {
     console.error("Error generating post:", error);
 
     toast({
       title: "Generation Failed",
-      description: "Failed to generate post. Using demo content instead.",
+      description: "Using fallback content",
       variant: "destructive"
     });
 
@@ -76,36 +132,21 @@ export const generatePost = async (
   }
 };
 
-const mockGeneratePost = (params: GeneratePostParams): { content: string; hashtags: string } => {
-  const mockPosts = {
-    leadership: {
-      content: "Today marks an important milestone in my leadership journey. I've learned that true leadership isn't about having all the answers, but about asking the right questions and empowering your team to find solutions together.",
-      hashtags: "#Leadership #PersonalGrowth #TeamEmpowerment"
-    },
-    "career growth": {
-      content: "Just completed a certification that I've been working toward for months! The late nights and weekend studies were challenging, but the skills I've gained are already opening new doors. Never stop investing in yourself!",
-      hashtags: "#CareerGrowth #ContinuousLearning #Certification"
-    },
-    "remote work": {
-      content: "After 6 months of full-time remote work, I've discovered that creating boundaries is essential. My top 3 practices: 1) Dedicated workspace, 2) Regular breaks to move, and 3) A clear shutdown ritual at day's end. What are your remote work success strategies?",
-      hashtags: "#RemoteWork #WorkFromHome #Productivity"
-    }
-  };
 
-  const lowerTopic = params.topic.toLowerCase();
-
-  let post;
-  if (mockPosts[lowerTopic as keyof typeof mockPosts]) {
-    post = mockPosts[lowerTopic as keyof typeof mockPosts];
-  } else {
-    post = {
-      content: `Here's my thoughts on ${params.topic}: As professionals in this field, we must continually adapt and grow. I've found that maintaining curiosity and embracing challenges leads to the most significant breakthroughs. What strategies have you found effective?`,
-      hashtags: `#${params.topic.replace(/\s+/g, '')} #ProfessionalGrowth #Insights`
-    };
-  }
-
+// 🔥 FALLBACK (UNCHANGED BUT CLEANED)
+const mockGeneratePost = (params: GeneratePostParams) => {
   return {
-    content: post.content,
-    hashtags: post.hashtags
+    content: `I tried something new with ${params.topic}… and it changed my perspective.
+
+Most people overcomplicate things.
+
+But sometimes, simplicity wins.
+
+The real lesson?
+
+Focus on what actually moves the needle.
+
+What’s your take?`,
+    hashtags: `#${params.topic.replace(/\s+/g, "")} #Growth #Learning`
   };
 };
