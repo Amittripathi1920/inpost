@@ -121,7 +121,7 @@ if (mockPosts[lowerTopic as keyof typeof mockPosts]) {
 post = mockPosts[lowerTopic as keyof typeof mockPosts];
 } else {
 post = {
-content: Here's my thoughts on ${params.topic}: As professionals in this field, we must continually adapt and grow. I\'ve found that maintaining curiosity and embracing challenges leads to the most significant breakthroughs. What strategies have you found effective?,
+content: Here's my thoughts on ${params.topic}: As professionals in this field, we must continually adapt and grow. I have found that maintaining curiosity and embracing challenges leads to the most significant breakthroughs. What strategies have you found effective?,
 hashtags: #${params.topic.replace(/\s+/g, '')} #ProfessionalGrowth #Insights
 };
 }
