@@ -42,7 +42,60 @@ Rules:
 - If influencer is NA, you can freely choose tone/style.
 - if what_to_include is "Anything", you can generate anything on topic - ${topic}
 - End with relevant and trending hashtags.
-- No preamble, no closing remarks — just the post.`;
+- No preamble, no closing remarks — just the post.
+use only anyone of the hook from below json
+
+[
+  {
+    "hook_name": "Risky Move",
+    "hook_prompt": "Write a LinkedIn post starting with a bold, risky decision or action (e.g., quitting a job, changing strategy, trying something unconventional). Build curiosity in the first 2 lines, then explain what happened, key lessons learned, and end with a strong takeaway. Keep it engaging and conversational."
+  },
+  {
+    "hook_name": "Unpopular Opinion",
+    "hook_prompt": "Write a LinkedIn post starting with an unpopular or controversial opinion related to the topic. The first line should challenge common beliefs. Then justify the opinion with logical arguments, examples, or experiences, and end by inviting discussion."
+  },
+  {
+    "hook_name": "Failure Story",
+    "hook_prompt": "Write a LinkedIn post that begins with a personal failure or mistake. Hook the reader emotionally in the first 2 lines, then describe what went wrong, what you learned, and how it helped you improve. Keep it authentic and relatable."
+  },
+  {
+    "hook_name": "Value List",
+    "hook_prompt": "Write a LinkedIn post that starts with a high-value promise (e.g., '5 tips', '7 tricks', '3 mistakes'). Deliver actionable insights in a clear list format. Keep each point concise and practical, and end with a summary or call to action."
+  },
+  {
+    "hook_name": "Pattern Interrupt",
+    "hook_prompt": "Write a LinkedIn post starting with a surprising or counterintuitive statement that interrupts common thinking (e.g., 'Stop doing this', 'Don’t learn this skill'). Then explain the reasoning, provide insights, and guide the reader toward a better approach."
+  },
+  {
+    "hook_name": "Transformation Story",
+    "hook_prompt": "Write a LinkedIn post showing a clear before-and-after transformation. Start with where you began, highlight struggles or challenges, then explain what changed and how you achieved the result. End with motivation or advice for others."
+  },
+  {
+    "hook_name": "Behind the Scenes",
+    "hook_prompt": "Write a LinkedIn post that reveals something people usually don’t see about a process, job, or industry. Start with curiosity-driven lines, then explain the reality, insights, or hidden challenges, and end with a meaningful takeaway."
+  },
+  {
+    "hook_name": "Warning / Mistakes",
+    "hook_prompt": "Write a LinkedIn post that warns readers about common mistakes. Start with a strong cautionary statement, then list key mistakes and explain why they matter. End with practical advice on how to avoid them."
+  },
+  {
+    "hook_name": "Results / Case Study",
+    "hook_prompt": "Write a LinkedIn post highlighting a specific result or achievement using numbers or measurable outcomes. Start with the result, then explain what was done to achieve it, key strategies, and lessons others can apply."
+  },
+  {
+    "hook_name": "Storytelling",
+    "hook_prompt": "Write a LinkedIn post that starts with a compelling short story or moment. Use a narrative style to draw readers in, then connect the story to a professional lesson or insight. Keep it engaging and easy to read."
+  },
+  {
+    "hook_name": "Question Hook",
+    "hook_prompt": "Write a LinkedIn post starting with a thought-provoking question that your target audience relates to. Then explore the topic with insights, examples, or opinions, and encourage readers to engage in the comments."
+  },
+  {
+    "hook_name": "Contrarian Insight",
+    "hook_prompt": "Write a LinkedIn post that challenges a widely accepted practice in the industry. Start with a bold statement, explain why it's flawed, and suggest a better alternative with clear reasoning."
+  }
+]
+`;
 };
 
 export const generatePost = async (
