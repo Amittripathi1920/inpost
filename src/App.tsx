@@ -16,6 +16,7 @@ import GeneratePost from "@/pages/GeneratePost";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import PrivacyPolicy from "@/pages/PrivacyPolicy"; // ✅ NEW
+import DemoHome from "@/pages/DemoHome"; // ✅ NEW
 
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const AppRoutes = () => {
       {/* Wrap everything in Layout */}
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
+        <Route path="demohome" element={<DemoHome />} /> {/* ✅ NEW */}
         <Route
           path="login"
           element={
