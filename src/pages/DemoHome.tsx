@@ -250,10 +250,10 @@ const DemoHome = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-stone-500 to-stone-700 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-stone-500 to-stone-700 bg-clip-text text-transparent">
                 EchoPost
               </span>
             </div>
@@ -308,7 +308,7 @@ const DemoHome = () => {
           >
             <Button
               size="lg"
-              className="text-lg px-8 py-4 bg-gradient-to-r from-stone-500 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white font-semibold rounded-full shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+              className="text-lg px-8 py-4 bg-gradient-to-r from-stone-500 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white font-semibold rounded-full shadow-lg hover:shadow-stone-500/25 transition-all duration-300"
               onClick={handleCTAClick}
             >
               Start Creating Now
@@ -415,14 +415,14 @@ const DemoHome = () => {
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 className="text-center relative"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full mb-6 text-white text-xl font-bold">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-stone-500 to-stone-700 rounded-full mb-6 text-white text-xl font-bold">
                   {step.icon}
                 </div>
-                <div className="text-sm font-semibold text-purple-600 mb-2">{step.step}</div>
+                <div className="text-sm font-semibold text-stone-600 mb-2">{step.step}</div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-4">{step.title}</h3>
                 <p className="text-slate-600 leading-relaxed">{step.description}</p>
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-purple-200 to-pink-200 transform -translate-x-8"></div>
+                  <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-stone-200 to-stone-400 transform -translate-x-8"></div>
                 )}
               </motion.div>
             ))}
@@ -458,9 +458,9 @@ const DemoHome = () => {
                 transition={{ duration: 0.5 }}
                 className="text-center"
               >
-                <Card className="border-0 shadow-xl bg-gradient-to-r from-purple-50 to-pink-50">
+                <Card className="border-0 shadow-xl bg-gradient-to-r from-stone-50 to-stone-100">
                   <CardContent className="p-8">
-                    <Quote className="w-12 h-12 text-purple-400 mx-auto mb-6" />
+                    <Quote className="w-12 h-12 text-stone-400 mx-auto mb-6" />
                     <blockquote className="text-xl md:text-2xl text-slate-700 mb-8 italic">
                       "{testimonials[activeTestimonial].content}"
                     </blockquote>
@@ -490,7 +490,7 @@ const DemoHome = () => {
                 <button
                   key={index}
                   onClick={() => setActiveTestimonial(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${index === activeTestimonial ? 'bg-purple-600' : 'bg-slate-300'
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${index === activeTestimonial ? 'bg-stone-600' : 'bg-slate-300'
                     }`}
                 />
               ))}
@@ -528,7 +528,7 @@ const DemoHome = () => {
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1">
+                    <Badge className="bg-gradient-to-r from-stone-500 to-stone-700 text-white px-4 py-1">
                       <Crown className="w-4 h-4 mr-1" />
                       Most Popular
                     </Badge>
@@ -553,7 +553,7 @@ const DemoHome = () => {
                       ))}
                     </ul>
                     <Button
-                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' : ''}`}
+                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-stone-500 to-stone-700 hover:from-stone-700 hover:to-stone-900' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
                       onClick={handleCTAClick}
                     >
@@ -601,7 +601,7 @@ const DemoHome = () => {
       </section>
 
       {/* Newsletter */}
-      <section className="py-24 bg-gradient-to-r from-purple-600 to-pink-600">
+      <section className="py-24 bg-gradient-to-r from-stone-500 to-stone-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -614,7 +614,7 @@ const DemoHome = () => {
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Stay Ahead of the Curve
             </h2>
-            <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-stone-100 mb-8 max-w-2xl mx-auto">
               Get weekly insights on LinkedIn trends, content strategies, and professional growth tips.
             </p>
 
@@ -628,7 +628,7 @@ const DemoHome = () => {
               />
               <Button
                 onClick={handleSubscribe}
-                className="bg-white text-purple-600 hover:bg-gray-100 font-semibold"
+                className="bg-white text-stone-600 hover:bg-gray-100 font-semibold"
                 disabled={isSubscribed}
               >
                 {isSubscribed ? (
@@ -645,7 +645,7 @@ const DemoHome = () => {
               </Button>
             </div>
 
-            <p className="text-sm text-purple-200 mt-4">
+            <p className="text-sm text-stone-200 mt-4">
               No spam, unsubscribe at any time. We respect your privacy.
             </p>
           </motion.div>
@@ -658,7 +658,7 @@ const DemoHome = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-stone-500 to-stone-700 rounded-lg flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">EchoPost</span>
