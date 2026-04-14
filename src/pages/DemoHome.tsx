@@ -286,11 +286,11 @@ const DemoHome = () => {
               ✨ Trusted by 50,000+ Professionals
             </Badge>
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
-              <span className="bg-linear-to-r from-stone-500 to-stone-700 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-stone-500 to-stone-700 bg-clip-text text-transparent">
                 Elevate Your
               </span>
               <br />
-              <span className="bg-linear-to-r from-stone-500 to-stone-700 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-stone-500 to-stone-700 bg-clip-text text-transparent">
                 LinkedIn Presence
               </span>
             </h1>
@@ -308,7 +308,7 @@ const DemoHome = () => {
           >
             <Button
               size="lg"
-              className="text-lg px-8 py-4 bg-linear-to-r from-stone-500 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white font-semibold rounded-full shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+              className="text-lg px-8 py-4 bg-gradient-to-r from-stone-500 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white font-semibold rounded-full shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
               onClick={handleCTAClick}
             >
               Start Creating Now
